@@ -3,8 +3,9 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { defaultProps, resolveConcretePayload, UrduInsightPayload, urduInsightSchema } from './types';
+import { calculateVideoTiming } from './utils/timing';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -72,19 +73,6 @@ app.get('/api/health', (req: Request, res: Response) => {
 /**
  * Main Video Generation Endpoint:
  * POST /api/generate-video
- *
- * Body schema:
- * {
- *   "urduText": "اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔",
- *   "title": "آج کا سبق",
- *   "surahReference": "سورۃ البقرۃ - آیت ۱۵۳",
- *   "arabicAyah": "يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ",
- *   "authorOrSource": "قرآنی حکمت",
- *   "bgTheme": "vintage-parchment" | "dark-marble" | "warm-amber",
- *   "showPenAnimation": true,
- *   "readingPauseSeconds": 4.5,
- *   "stream": false // set to true to directly download the MP4 file
- * }
  */
 app.post('/api/generate-video', async (req: Request, res: Response) => {
   try {
@@ -119,7 +107,6 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     console.log(`✍️ Body: "${(payload.body || payload.urduText).substring(0, 50)}..."`);
     console.log(`🎨 Theme: ${payload.bgTheme} | ✒️ Qalam: ${payload.qalam} | 🔤 Font: ${payload.fontFamily} | 🎵 Music: ${payload.bgMusic}`);
 
-
     const bundleLocation = await getBundleLocation();
 
     // Select composition and compute dynamic duration
@@ -131,7 +118,27 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
 
     const uniqueId = `urdu_short_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const filename = `${uniqueId}.mp4`;
+    const thumbFilename = `${uniqueId}.png`;
     const outputPath = path.join(outDir, filename);
+    const thumbPath = path.join(outDir, thumbFilename);
+
+    // Calculate screenshot frame & offset in milliseconds for Instagram Reels
+    const timing = calculateVideoTiming(payload);
+    const screenshotFrame = timing.shiftStartFrame > 0
+      ? Math.max(1, timing.shiftStartFrame - 2)
+      : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
+    const thumbOffsetMs = Math.round((screenshotFrame / composition.fps) * 1000);
+
+    // Render thumbnail still
+    console.log(`📸 Capturing thumbnail screenshot at frame ${screenshotFrame} (${thumbOffsetMs}ms)...`);
+    await renderStill({
+      composition,
+      serveUrl: bundleLocation,
+      output: thumbPath,
+      inputProps: payload,
+      frame: screenshotFrame,
+      imageFormat: 'png',
+    });
 
     console.log(`🎬 Rendering ${composition.durationInFrames} frames (${(composition.durationInFrames / composition.fps).toFixed(1)}s)...`);
 
@@ -149,6 +156,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const host = req.get('host') || `localhost:${PORT}`;
     const protocol = req.protocol || 'http';
     const videoUrl = `${protocol}://${host}/videos/${filename}`;
+    const thumbnailUrl = `${protocol}://${host}/videos/${thumbFilename}`;
     const durationSeconds = +(composition.durationInFrames / composition.fps).toFixed(2);
 
     // If client requested direct video file stream / download
@@ -158,11 +166,17 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       return fs.createReadStream(outputPath).pipe(res);
     }
 
-    // Default: Return JSON with video URL and metadata
+    // Default: Return JSON with video URL, thumbnail, and Instagram Reels thumb_offset
     return res.status(200).json({
       success: true,
       videoUrl,
+      thumbnailUrl,
       filename,
+      thumbFilename,
+      thumb_offset: thumbOffsetMs,
+      thumb_offset_ms: thumbOffsetMs,
+      cover_frame_offset_ms: thumbOffsetMs,
+      screenshotFrame,
       durationSeconds,
       durationInFrames: composition.durationInFrames,
       fps: composition.fps,

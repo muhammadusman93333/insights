@@ -1,13 +1,16 @@
 import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { defaultProps, resolveConcretePayload, UrduInsightPayload } from './types';
+import { calculateVideoTiming } from './utils/timing';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
   jsonPath?: string;
   outputPath?: string;
+  screenshotPath?: string;
+  captureScreenshot?: boolean;
   onProgress?: (progress: number) => void;
 }
 
@@ -33,15 +36,22 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio
   payload = resolveConcretePayload(payload);
 
-  // 2. Determine output path
+  // 2. Determine output paths
   const outDir = path.resolve(process.cwd(), 'out');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }
 
+  const timestamp = Date.now();
   const outputPath =
     options.outputPath ||
-    path.join(outDir, `urdu_short_${Date.now()}.mp4`);
+    path.join(outDir, `urdu_short_${timestamp}.mp4`);
+
+  const screenshotPath =
+    options.screenshotPath ||
+    path.join(outDir, `urdu_thumb_${timestamp}.png`);
+
+  const shouldCaptureScreenshot = options.captureScreenshot !== false;
 
   console.log('----------------------------------------------------');
   console.log(' ✒️  Qalam & Dawaat (قلم اور دوات) - Video Generator');
@@ -56,7 +66,10 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   console.log(`✒️ Qalam:       ${payload.qalam}`);
   console.log(`🔤 Font:        ${payload.fontFamily}`);
   console.log(`🎵 Music:       ${payload.bgMusic}`);
-  console.log(`📁 Output File: ${outputPath}`);
+  console.log(`📁 Video File:  ${outputPath}`);
+  if (shouldCaptureScreenshot) {
+    console.log(`📸 Thumb File:  ${screenshotPath}`);
+  }
   console.log('----------------------------------------------------');
 
 
@@ -76,6 +89,29 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     inputProps: payload,
   });
 
+  // Calculate timing to determine the exact screenshot frame
+  const timing = calculateVideoTiming(payload);
+  const screenshotFrame = timing.shiftStartFrame > 0
+    ? Math.max(1, timing.shiftStartFrame - 2)
+    : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
+
+  // 1. Capture Thumbnail Screenshot when Hook is completed in center before moving up
+  if (shouldCaptureScreenshot) {
+    console.log(
+      `📸 Capturing thumbnail screenshot at frame ${screenshotFrame} (Hook completed in center)...`
+    );
+    await renderStill({
+      composition,
+      serveUrl: bundleLocation,
+      output: screenshotPath,
+      inputProps: payload,
+      frame: screenshotFrame,
+      imageFormat: 'png',
+    });
+    console.log(`✅ Thumbnail screenshot saved to: ${screenshotPath}`);
+  }
+
+  // 2. Render Full Video
   console.log(
     `🎬 Rendering video (${composition.durationInFrames} frames @ ${composition.fps}fps, ${(composition.durationInFrames / composition.fps).toFixed(1)}s)...`
   );
@@ -106,12 +142,17 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   });
 
   console.log('----------------------------------------------------');
-  console.log(`✅ Render complete! Video saved to:`);
-  console.log(`👉 ${outputPath}`);
+  console.log(`✅ Render complete! Output saved to:`);
+  console.log(`👉 Video:     ${outputPath}`);
+  if (shouldCaptureScreenshot) {
+    console.log(`👉 Thumbnail: ${screenshotPath}`);
+  }
   console.log('----------------------------------------------------');
 
   return {
     outputPath,
+    screenshotPath: shouldCaptureScreenshot ? screenshotPath : undefined,
+    screenshotFrame: shouldCaptureScreenshot ? screenshotFrame : undefined,
     durationInFrames: composition.durationInFrames,
     fps: composition.fps,
   };

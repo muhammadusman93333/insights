@@ -6,6 +6,9 @@ export interface TimingPlan {
   totalFrames: number;
   headerStartFrame: number;
   headerEndFrame: number;
+  shiftStartFrame: number;
+  shiftEndFrame: number;
+  shouldShift: boolean;
   hookStartFrame: number;
   hookEndFrame: number;
   hookLines: string[];
@@ -94,11 +97,14 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
 
   let hookStartFrame = 0;
   let hookEndFrame = 0;
+  let shiftStartFrame = 0;
+  let shiftEndFrame = 0;
+  let shouldShift = false;
   let bodyStartFrame = 0;
   let bodyEndFrame = 0;
 
   if (hookLines.length > 0 && bodyLines.length > 0) {
-    // 1. Hook begins after Title header
+    // 1. Hook begins in center after Title header
     hookStartFrame = headerEndFrame + 10;
     let hookWritingFrames = 0;
     for (const line of hookLines) {
@@ -108,8 +114,13 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     }
     hookEndFrame = hookStartFrame + Math.max(60, hookWritingFrames);
 
-    // 2. Body text starts after Hook with a brief pause
-    bodyStartFrame = hookEndFrame + 14;
+    // 2. Smoothly shift Title + Hook from Center to Top
+    shiftStartFrame = hookEndFrame + 8;
+    shiftEndFrame = shiftStartFrame + 24;
+    shouldShift = true;
+
+    // 3. Body text starts writing after reaching Top
+    bodyStartFrame = shiftEndFrame + 10;
     let bodyWritingFrames = 0;
     for (const line of bodyLines) {
       const lineLength = line.trim().length;
@@ -118,7 +129,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     }
     bodyEndFrame = bodyStartFrame + Math.max(70, bodyWritingFrames);
   } else if (hookLines.length > 0) {
-    // Only hook is provided
+    // Only hook is provided (stays centered)
     hookStartFrame = headerEndFrame + 10;
     let hookWritingFrames = 0;
     for (const line of hookLines) {
@@ -127,11 +138,18 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
       hookWritingFrames += framesForLine + 6;
     }
     hookEndFrame = hookStartFrame + Math.max(80, hookWritingFrames);
+    shiftStartFrame = hookEndFrame;
+    shiftEndFrame = hookEndFrame;
+    shouldShift = false;
     bodyStartFrame = hookEndFrame;
     bodyEndFrame = hookEndFrame;
   } else {
-    // Only body / urduText is provided
-    bodyStartFrame = headerEndFrame + 10;
+    // Only body / urduText is provided (Title starts center, shifts to top, then body writes)
+    shiftStartFrame = headerEndFrame + 12;
+    shiftEndFrame = shiftStartFrame + 24;
+    shouldShift = true;
+
+    bodyStartFrame = shiftEndFrame + 10;
     let bodyWritingFrames = 0;
     for (const line of bodyLines) {
       const lineLength = line.trim().length;
@@ -158,6 +176,9 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     totalFrames,
     headerStartFrame,
     headerEndFrame,
+    shiftStartFrame,
+    shiftEndFrame,
+    shouldShift,
     hookStartFrame,
     hookEndFrame,
     hookLines,

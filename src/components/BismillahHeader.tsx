@@ -7,6 +7,10 @@ interface HeaderTitleProps {
   isDark?: boolean;
   theme?: BgThemeType | string;
   fontFamily?: string;
+  shiftStartFrame?: number;
+  shiftEndFrame?: number;
+  shouldShift?: boolean;
+  centerOffsetY?: number;
 }
 
 export const BismillahHeader: React.FC<HeaderTitleProps> = ({
@@ -14,6 +18,10 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
   isDark: isDarkProp,
   theme = 'vintage-parchment',
   fontFamily = "'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif",
+  shiftStartFrame = 0,
+  shiftEndFrame = 0,
+  shouldShift = false,
+  centerOffsetY = 520,
 }) => {
   const frame = useCurrentFrame();
 
@@ -31,9 +39,26 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
   const opacity = interpolate(frame, [0, 25], [0, 1], {
     extrapolateRight: 'clamp',
   });
-  const translateY = interpolate(frame, [0, 25], [-20, 0], {
+  const entranceSlide = interpolate(frame, [0, 25], [-20, 0], {
     extrapolateRight: 'clamp',
   });
+
+  // Smooth center-to-top glide animation
+  const shiftY = shouldShift && shiftEndFrame > shiftStartFrame
+    ? interpolate(
+        frame,
+        [shiftStartFrame, shiftEndFrame],
+        [centerOffsetY, 0],
+        {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+          easing: (t) =>
+            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
+        }
+      )
+    : (shouldShift ? centerOffsetY : 0);
+
+  const totalTranslateY = entranceSlide + shiftY;
 
   return (
     <div
@@ -44,7 +69,7 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
         justifyContent: 'center',
         paddingTop: 130,
         opacity,
-        transform: `translateY(${translateY}px)`,
+        transform: `translateY(${totalTranslateY}px)`,
         zIndex: 20,
       }}
     >

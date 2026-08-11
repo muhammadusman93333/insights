@@ -173,6 +173,42 @@ async function uploadVideo(filePath: string, uploadUrl: string): Promise<any> {
 }
 
 /**
+ * Uploads an image / thumbnail file to the specified PHP endpoint
+ */
+async function uploadThumbnail(filePath: string, uploadUrl: string): Promise<any> {
+  console.log(`\n📸 Uploading thumbnail screenshot to: ${uploadUrl}`);
+  console.log(`📁 File: ${filePath} (${(fs.statSync(filePath).size / 1024).toFixed(1)} KB)`);
+
+  const fileName = path.basename(filePath);
+  const fileBuffer = fs.readFileSync(filePath);
+  const blob = new Blob([fileBuffer], { type: 'image/png' });
+
+  const formData = new FormData();
+  formData.append('image', blob, fileName);
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const responseText = await response.text();
+  let jsonResult: any;
+  try {
+    jsonResult = JSON.parse(responseText);
+  } catch (e) {
+    throw new Error(`Thumbnail upload server responded with non-JSON (Status ${response.status}): ${responseText.substring(0, 300)}`);
+  }
+
+  if (!response.ok || (jsonResult.status && jsonResult.status !== 'success')) {
+    throw new Error(jsonResult.message || `Thumbnail upload failed with status code ${response.status}`);
+  }
+
+  console.log('✅ Thumbnail upload response received:');
+  console.log(JSON.stringify(jsonResult, null, 2));
+  return jsonResult;
+}
+
+/**
  * Sends a completion or failure webhook to Make.com
  */
 async function sendWebhook(webhookUrl: string, data: Record<string, any>) {
@@ -230,39 +266,78 @@ async function main() {
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }
-  const videoFileName = `urdu_insight_${Date.now()}.mp4`;
+  const uniqueId = Date.now();
+  const videoFileName = `urdu_insight_${uniqueId}.mp4`;
+  const thumbFileName = `urdu_thumb_${uniqueId}.png`;
   const outputPath = path.join(outDir, videoFileName);
+  const screenshotPath = path.join(outDir, thumbFileName);
 
   try {
-    // 1. Render Video
-    console.log('🎬 Step 1/3: Rendering video with Remotion...');
+    // 1. Render Video & Thumbnail Screenshot
+    console.log('🎬 Step 1/4: Rendering video and thumbnail screenshot with Remotion...');
     const renderResult = await renderUrduInsightVideo({
       inputPayload: payload,
       outputPath,
+      screenshotPath,
+      captureScreenshot: true,
     });
 
     // 2. Upload Video
-    console.log('\n📤 Step 2/3: Uploading video to live server...');
-    const uploadResult = await uploadVideo(outputPath, uploadUrl);
+    console.log('\n📤 Step 2/4: Uploading video to live server...');
+    const uploadVideoResult = await uploadVideo(outputPath, uploadUrl);
 
-    // Extract video URL
     const videoUrl =
-      uploadResult.data?.url ||
-      uploadResult.url ||
-      `https://uvisionpk.com/insights/uploads/${uploadResult.data?.file_name || videoFileName}`;
+      uploadVideoResult.data?.url ||
+      uploadVideoResult.url ||
+      `https://uvisionpk.com/insights/uploads/${uploadVideoResult.data?.file_name || videoFileName}`;
 
     console.log(`\n🎉 Public Video URL: ${videoUrl}`);
 
-    // 3. Send Webhook Notification to Make.com
-    console.log('\n🔔 Step 3/3: Sending Make.com webhook notification...');
+    // 3. Upload Thumbnail Screenshot
+    let thumbnailUrl: string | undefined;
+    let thumbData: any = undefined;
+    if (renderResult.screenshotPath && fs.existsSync(renderResult.screenshotPath)) {
+      console.log('\n📸 Step 3/4: Uploading thumbnail image to live server...');
+      const uploadThumbResult = await uploadThumbnail(renderResult.screenshotPath, uploadUrl);
+      thumbData = uploadThumbResult.data;
+      thumbnailUrl =
+        uploadThumbResult.data?.url ||
+        uploadThumbResult.url ||
+        `https://uvisionpk.com/insights/uploads/${uploadThumbResult.data?.file_name || thumbFileName}`;
+      console.log(`\n🖼️ Public Thumbnail URL: ${thumbnailUrl}`);
+    }
+
+    // 4. Send Webhook Notification to Make.com
+    console.log('\n🔔 Step 4/4: Sending Make.com webhook notification...');
+    const screenshotFrame = renderResult.screenshotFrame ?? 0;
+    const fps = renderResult.fps || 30;
+    const thumbOffsetMs = Math.round((screenshotFrame / fps) * 1000);
+
     const webhookPayload = {
       status: 'success',
-      message: 'Video has been rendered and uploaded successfully',
+      message: 'Video and thumbnail have been rendered and uploaded successfully',
+      title: payload.title,
+      hook: payload.hook,
+      urduText: payload.urduText || payload.body,
+      surahReference: payload.surahReference,
       video_url: videoUrl,
       videoUrl: videoUrl,
-      file_name: uploadResult.data?.file_name || videoFileName,
-      file_size: uploadResult.data?.file_size,
-      upload_data: uploadResult.data,
+      file_name: uploadVideoResult.data?.file_name || videoFileName,
+      file_size: uploadVideoResult.data?.file_size,
+      upload_data: uploadVideoResult.data,
+      thumbnail_url: thumbnailUrl,
+      thumbnailUrl: thumbnailUrl,
+      thumbnail_file_name: thumbData?.file_name || thumbFileName,
+      thumbnail_file_size: thumbData?.file_size,
+      thumbnail_data: thumbData,
+      // Instagram Reels Cover Frame / Thumbnail offset in milliseconds
+      thumb_offset: thumbOffsetMs,
+      thumb_offset_ms: thumbOffsetMs,
+      cover_frame_offset_ms: thumbOffsetMs,
+      cover_frame_ms: thumbOffsetMs,
+      thumbnail_offset_ms: thumbOffsetMs,
+      screenshot_frame: screenshotFrame,
+      screenshot_timestamp_seconds: +(screenshotFrame / fps).toFixed(2),
       metadata: {
         title: payload.title,
         hook: payload.hook,
@@ -275,6 +350,9 @@ async function main() {
         durationInFrames: renderResult.durationInFrames,
         fps: renderResult.fps,
         durationSeconds: +(renderResult.durationInFrames / renderResult.fps).toFixed(2),
+        thumb_offset: thumbOffsetMs,
+        thumbOffsetMs,
+        screenshotFrame,
       },
       passthrough,
       completed_at: new Date().toISOString(),
@@ -286,7 +364,10 @@ async function main() {
     appendStepSummary(`
 ## 🎥 Video Render & Upload Completed Successfully!
 - **Video URL**: [${videoUrl}](${videoUrl})
-- **File Name**: \`${uploadResult.data?.file_name || videoFileName}\`
+${thumbnailUrl ? `- **Thumbnail URL**: [${thumbnailUrl}](${thumbnailUrl})` : ''}
+- **Instagram Thumb Offset**: \`${thumbOffsetMs} ms\` (Frame ${screenshotFrame} @ ${fps}fps)
+- **Video File**: \`${uploadVideoResult.data?.file_name || videoFileName}\`
+${thumbData?.file_name ? `- **Thumbnail File**: \`${thumbData.file_name}\`` : ''}
 - **Duration**: \`${(renderResult.durationInFrames / renderResult.fps).toFixed(1)}s\` (${renderResult.durationInFrames} frames @ ${renderResult.fps}fps)
 - **Title**: *${payload.title || 'N/A'}*
 - **Reference**: *${payload.surahReference || 'N/A'}*

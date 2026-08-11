@@ -131,11 +131,11 @@ jobs:
           UPLOAD_URL: ${{ secrets.UPLOAD_URL || 'https://uvisionpk.com/insights/upload_video.php' }}
         run: npm run render:publish
 
-      - name: 💾 Backup Rendered Video Artifact (Optional)
+      - name: 💾 Backup Rendered Artifacts (Optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rendered-video
-          path: out/*.mp4
+          name: rendered-video-and-thumbnail
+          path: out/*
           retention-days: 1
           if-no-files-found: ignore

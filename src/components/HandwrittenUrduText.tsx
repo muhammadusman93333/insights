@@ -11,6 +11,11 @@ interface HandwrittenUrduTextProps {
   bodyLines?: string[];
   bodyStartFrame?: number;
   bodyEndFrame?: number;
+  // Shift animation props
+  shiftStartFrame?: number;
+  shiftEndFrame?: number;
+  shouldShift?: boolean;
+  centerOffsetY?: number;
   // Backward compatibility props
   urduLines?: string[];
   urduStartFrame?: number;
@@ -29,6 +34,10 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   bodyLines,
   bodyStartFrame = 135,
   bodyEndFrame = 300,
+  shiftStartFrame = 0,
+  shiftEndFrame = 0,
+  shouldShift = false,
+  centerOffsetY = 520,
   urduLines,
   urduStartFrame,
   urduEndFrame,
@@ -108,6 +117,21 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   let isPenActive = false;
   let penOpacity = 0;
 
+  // Smooth center-to-top glide animation offset for Hook lines
+  const hookShiftY = shouldShift && shiftEndFrame > shiftStartFrame
+    ? interpolate(
+        frame,
+        [shiftStartFrame, shiftEndFrame],
+        [centerOffsetY, 0],
+        {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+          easing: (t) =>
+            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
+        }
+      )
+    : (shouldShift ? centerOffsetY : 0);
+
   // 1. Calculate Hook Lines
   const totalHookFrames = Math.max(1, hookEndFrame - hookStartFrame);
   const framesPerHookLine = actualHookLines.length > 0
@@ -124,7 +148,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     });
 
     const isCurrentLine = frame >= lineStart && frame <= lineEnd + 3;
-    const lineY = startTop + index * lineSpacing;
+    const lineY = startTop + index * lineSpacing + hookShiftY;
 
     const estLineWidth = Math.min(
       containerWidth,
@@ -222,11 +246,14 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     };
   });
 
-  // Divider between Hook and Body (appears smoothly once hook finishes writing)
+  // Divider between Hook and Body (appears smoothly once hook and title reach the top)
   const showDivider = actualHookLines.length > 0 && actualBodyLines.length > 0;
   const dividerY = startTop + actualHookLines.length * lineSpacing + Math.round(sectionGap * 0.5) - 18;
+  const dividerAppearStart = shouldShift && shiftEndFrame > 0
+    ? shiftEndFrame - 2
+    : hookEndFrame - 5;
   const dividerOpacity = showDivider
-    ? interpolate(frame, [hookEndFrame - 5, hookEndFrame + 15], [0, 0.85], {
+    ? interpolate(frame, [dividerAppearStart, dividerAppearStart + 15], [0, 0.85], {
         extrapolateLeft: 'clamp',
         extrapolateRight: 'clamp',
       })

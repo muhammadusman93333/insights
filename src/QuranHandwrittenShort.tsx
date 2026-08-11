@@ -84,12 +84,18 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         title={title}
         isDark={paper.isDark}
         fontFamily={selectedFont}
+        shiftStartFrame={timing.shiftStartFrame}
+        shiftEndFrame={timing.shiftEndFrame}
+        shouldShift={timing.shouldShift}
       />
       {/* 3. Real-time handwritten Urdu text engine with Hook and Body sequence */}
       <HandwrittenUrduText
         hookLines={timing.hookLines}
         hookStartFrame={timing.hookStartFrame}
         hookEndFrame={timing.hookEndFrame}
+        shiftStartFrame={timing.shiftStartFrame}
+        shiftEndFrame={timing.shiftEndFrame}
+        shouldShift={timing.shouldShift}
         bodyLines={timing.bodyLines}
         bodyStartFrame={timing.bodyStartFrame}
         bodyEndFrame={timing.bodyEndFrame}
