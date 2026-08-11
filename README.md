@@ -212,3 +212,63 @@ await renderUrduInsightVideo({
   onProgress: (pct) => console.log(`Progress: ${pct}%`),
 });
 ```
+
+---
+
+## ⚡ GitHub Actions Automated Cloud Rendering & Webhooks
+
+The repository includes a complete automated CI/CD pipeline [render_video.yml](file:///.github/workflows/render_video.yml) that renders videos directly in the cloud on GitHub's runners, uploads the MP4 output to your server (`https://uvisionpk.com/insights/upload_video.php`), and dispatches a webhook to Make.com (`https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy`) with the resulting live video URL.
+
+### 1. Trigger via Make.com (HTTP Module)
+You can trigger GitHub Actions cloud rendering from Make.com or any external system using GitHub's `repository_dispatch` API:
+
+- **Method**: `POST`
+- **URL**: `https://api.github.com/repos/muhammadusman93333/insights/dispatches`
+- **Headers**:
+  - `Accept`: `application/vnd.github+json`
+  - `Authorization`: `Bearer YOUR_GITHUB_PERSONAL_ACCESS_TOKEN`
+  - `User-Agent`: `Make-Automation`
+- **Body (JSON)**:
+  ```json
+  {
+    "event_type": "render-video",
+    "client_payload": {
+      "title": "خاموش پکار",
+      "hook": "کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں...",
+      "urduText": "اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔",
+      "surahReference": "سورۃ البقرۃ - آیت ۱۵۳",
+      "bgTheme": "random",
+      "qalam": "random",
+      "fontFamily": "random",
+      "bgMusic": "random",
+      "webhook_url": "https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy"
+    }
+  }
+  ```
+
+### 2. Manual Trigger via GitHub Actions UI
+1. Go to your repository on GitHub: `https://github.com/muhammadusman93333/insights/actions`
+2. Select **"Render Urdu Insight Video"** from the left sidebar.
+3. Click **"Run workflow"**, customize your text, theme, pen, and fonts, and click **"Run workflow"**.
+
+### 3. Make.com Webhook Payload Received
+When rendering and upload complete, Make.com immediately receives:
+```json
+{
+  "status": "success",
+  "message": "Video has been rendered and uploaded successfully",
+  "video_url": "https://uvisionpk.com/insights/uploads/urdu_insight_1723123456789.mp4",
+  "file_name": "urdu_insight_1723123456789.mp4",
+  "upload_data": {
+    "file_name": "urdu_insight_1723123456789.mp4",
+    "url": "https://uvisionpk.com/insights/uploads/urdu_insight_1723123456789.mp4"
+  },
+  "metadata": {
+    "title": "خاموش پکار",
+    "surahReference": "سورۃ البقرۃ - آیت ۱۵۳",
+    "durationSeconds": 18.5
+  },
+  "completed_at": "2026-08-11T07:10:00.000Z"
+}
+```
+

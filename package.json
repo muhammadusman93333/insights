@@ -8,6 +8,7 @@
     "server": "tsx src/server.ts",
     "build": "remotion render src/index.ts QuranHandwrittenShort out/video.mp4",
     "render": "tsx src/render.ts",
+    "render:publish": "tsx scripts/render_and_publish.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

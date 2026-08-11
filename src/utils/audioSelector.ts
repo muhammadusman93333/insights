@@ -10,7 +10,15 @@ export const AUDIO_TRACKS = [
 ] as const;
 
 /**
- * Resolves a background music path or picks a random track from 1.mp3 - 8.mp3 when 'random' is passed.
+ * Returns a randomly chosen audio track number ("1" through "8")
+ */
+export function getRandomAudioTrack(): string {
+  const randomIndex = Math.floor(Math.random() * AUDIO_TRACKS.length);
+  return `${randomIndex + 1}`;
+}
+
+/**
+ * Resolves a background music path or returns a stable default track
  */
 export function resolveAudioTrack(bgMusic?: string): string {
   if (bgMusic && bgMusic !== 'random') {
@@ -30,7 +38,7 @@ export function resolveAudioTrack(bgMusic?: string): string {
     return bgMusic;
   }
 
-  // Pure random selection from 1.mp3 - 8.mp3
-  const randomIndex = Math.floor(Math.random() * AUDIO_TRACKS.length);
-  return AUDIO_TRACKS[randomIndex];
+  // Stable default (prevent frame-by-frame flickering)
+  return AUDIO_TRACKS[0];
 }
+

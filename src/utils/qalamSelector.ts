@@ -52,7 +52,15 @@ export const QALAM_COLLECTION: QalamConfig[] = [
 ];
 
 /**
- * Resolves a specific qalam or returns a random qalam when 'random' is passed.
+ * Returns a randomly chosen qalam pen ID from the available collection
+ */
+export function getRandomQalamId(): string {
+  const randomIndex = Math.floor(Math.random() * QALAM_COLLECTION.length);
+  return QALAM_COLLECTION[randomIndex].id;
+}
+
+/**
+ * Resolves a specific qalam or returns a stable default when 'random' is passed.
  */
 export function resolveQalamConfig(qalamId?: string): QalamConfig {
   if (qalamId && qalamId !== 'random') {
@@ -62,7 +70,7 @@ export function resolveQalamConfig(qalamId?: string): QalamConfig {
     if (found) return found;
   }
 
-  // Pure random selection from the 6 qalams
-  const randomIndex = Math.floor(Math.random() * QALAM_COLLECTION.length);
-  return QALAM_COLLECTION[randomIndex];
+  // Stable default (prevent frame-by-frame flickering)
+  return QALAM_COLLECTION[0];
 }
+

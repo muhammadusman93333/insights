@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import { defaultProps, UrduInsightPayload } from './types';
+import { defaultProps, resolveConcretePayload, UrduInsightPayload } from './types';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
@@ -30,6 +30,9 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     payload = { ...payload, ...options.inputPayload };
   }
 
+  // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio
+  payload = resolveConcretePayload(payload);
+
   // 2. Determine output path
   const outDir = path.resolve(process.cwd(), 'out');
   if (!fs.existsSync(outDir)) {
@@ -49,9 +52,13 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   }
   console.log(`✍️ Body Text:   ${(payload.body || payload.bodyText || payload.urduText || '').substring(0, 60)}...`);
   console.log(`📖 Reference:   ${payload.surahReference || 'N/A'}`);
-  console.log(`🎨 Theme:       ${payload.bgTheme || 'random'}`);
+  console.log(`🎨 Theme:       ${payload.bgTheme}`);
+  console.log(`✒️ Qalam:       ${payload.qalam}`);
+  console.log(`🔤 Font:        ${payload.fontFamily}`);
+  console.log(`🎵 Music:       ${payload.bgMusic}`);
   console.log(`📁 Output File: ${outputPath}`);
   console.log('----------------------------------------------------');
+
 
   console.log('📦 Bundling Remotion composition...');
   const entryPoint = path.resolve(__dirname, 'index.ts');
@@ -81,7 +88,7 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     codec: 'h264',
     outputLocation: outputPath,
     inputProps: payload,
-    timeoutInMilliseconds: 90000,
+    timeoutInMilliseconds: 300000,
     onProgress: ({ renderedFrames, encodedFrames }) => {
       const progress = Math.round(
         (encodedFrames / composition.durationInFrames) * 100

@@ -111,7 +111,16 @@ export const PAPER_COLLECTION: PaperConfig[] = [
 ];
 
 /**
- * Resolves a specific background paper or returns a random paper when 'random' is passed.
+ * Returns a randomly chosen paper ID from the available collection
+ */
+export function getRandomPaperId(): string {
+  const randomIndex = Math.floor(Math.random() * PAPER_COLLECTION.length);
+  return PAPER_COLLECTION[randomIndex].id;
+}
+
+/**
+ * Resolves a specific background paper config.
+ * Uses stable default if 'random' is passed to avoid per-frame randomness.
  */
 export function resolvePaperConfig(theme?: string): PaperConfig {
   if (theme && theme !== 'random') {
@@ -121,7 +130,7 @@ export function resolvePaperConfig(theme?: string): PaperConfig {
     if (found) return found;
   }
 
-  // Pure random selection from all available papers
-  const randomIndex = Math.floor(Math.random() * PAPER_COLLECTION.length);
-  return PAPER_COLLECTION[randomIndex];
+  // Stable default (prevent frame-by-frame flickering)
+  return PAPER_COLLECTION[0];
 }
+

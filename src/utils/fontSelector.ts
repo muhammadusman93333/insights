@@ -36,14 +36,22 @@ export function ensureFontLoaded(family: string): void {
 }
 
 /**
- * Returns a truly random calligraphy font every time 'random' is passed (or on page refresh)
+ * Returns a randomly chosen Urdu calligraphy font
+ */
+export function getRandomUrduFont(): string {
+  const randomIndex = Math.floor(Math.random() * URDU_CALLIGRAPHY_FONTS.length);
+  return URDU_CALLIGRAPHY_FONTS[randomIndex];
+}
+
+/**
+ * Resolves a specific calligraphy font or returns a stable default font
  */
 export function resolveUrduFont(fontFamily?: string): string {
   let resolved = fontFamily;
   if (!resolved || resolved === 'random' || !URDU_CALLIGRAPHY_FONTS.includes(resolved as any)) {
-    const randomIndex = Math.floor(Math.random() * URDU_CALLIGRAPHY_FONTS.length);
-    resolved = URDU_CALLIGRAPHY_FONTS[randomIndex];
+    resolved = URDU_CALLIGRAPHY_FONTS[0];
   }
   ensureFontLoaded(resolved);
   return resolved;
 }
+

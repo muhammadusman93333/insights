@@ -1,0 +1,141 @@
+name: Render Urdu Insight Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Video Title (e.g. خاموش پکار)'
+        required: false
+        type: string
+        default: 'خاموش پکار'
+      hook:
+        description: 'Hook / Opening Question (Urdu)'
+        required: false
+        type: string
+        default: 'کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں، تو کوئی آپ کے اندر کے شور کو نہیں سن پاتا؟'
+      urduText:
+        description: 'Main Urdu Insight Text'
+        required: false
+        type: string
+        default: 'اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔'
+      surahReference:
+        description: 'Surah Reference (e.g. سورۃ البقرۃ - آیت ۱۵۳)'
+        required: false
+        type: string
+        default: 'سورۃ البقرۃ - آیت ۱۵۳'
+      bgTheme:
+        description: 'Background Theme (random, 1, 2, 3, 4, 5, 6, 7, 8)'
+        required: false
+        type: choice
+        options:
+          - 'random'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+          - '7'
+          - '8'
+        default: 'random'
+      qalam:
+        description: 'Qalam Style (random, 1, 2, 3, 4, 5, 6)'
+        required: false
+        type: choice
+        options:
+          - 'random'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+        default: 'random'
+      fontFamily:
+        description: 'Urdu Font Family'
+        required: false
+        type: choice
+        options:
+          - 'random'
+          - 'Jameel Noori Nastaleeq'
+          - 'Jameel Noori Nastaleeq Kasheeda'
+        default: 'random'
+      bgMusic:
+        description: 'Background Music (random, 1, 2, 3, 4, 5, 6, 7, 8)'
+        required: false
+        type: choice
+        options:
+          - 'random'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+          - '7'
+          - '8'
+        default: 'random'
+      payload_json:
+        description: 'Full JSON Payload String (Optional, overrides above inputs if provided)'
+        required: false
+        type: string
+      webhook_url:
+        description: 'Webhook URL to notify upon completion'
+        required: false
+        type: string
+        default: 'https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy'
+      upload_url:
+        description: 'Server upload endpoint'
+        required: false
+        type: string
+        default: 'https://uvisionpk.com/insights/upload_video.php'
+
+  repository_dispatch:
+    types: [render-video, render_video, make_webhook]
+
+jobs:
+  render-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🌐 Ensure Remotion browser dependencies
+        run: npx remotion browser ensure
+
+      - name: 🎬 Render Video & Upload to Server
+        env:
+          INPUT_TITLE: ${{ github.event.inputs.title }}
+          INPUT_HOOK: ${{ github.event.inputs.hook }}
+          INPUT_URDUTEXT: ${{ github.event.inputs.urduText }}
+          INPUT_SURAHREFERENCE: ${{ github.event.inputs.surahReference }}
+          INPUT_BGTHEME: ${{ github.event.inputs.bgTheme }}
+          INPUT_QALAM: ${{ github.event.inputs.qalam }}
+          INPUT_FONTFAMILY: ${{ github.event.inputs.fontFamily }}
+          INPUT_BGMUSIC: ${{ github.event.inputs.bgMusic }}
+          INPUT_PAYLOAD_JSON: ${{ github.event.inputs.payload_json }}
+          INPUT_WEBHOOK_URL: ${{ github.event.inputs.webhook_url }}
+          INPUT_UPLOAD_URL: ${{ github.event.inputs.upload_url }}
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy' }}
+          UPLOAD_URL: ${{ secrets.UPLOAD_URL || 'https://uvisionpk.com/insights/upload_video.php' }}
+        run: npm run render:publish
+
+      - name: 💾 Backup Rendered Video Artifact (Optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video
+          path: out/*.mp4
+          retention-days: 1
+          if-no-files-found: ignore

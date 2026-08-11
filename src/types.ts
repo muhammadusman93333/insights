@@ -87,3 +87,5 @@ export const defaultProps: UrduInsightPayload = {
   readingPauseSeconds: 4.5,
 };
 
+export { resolveConcretePayload } from './utils/propsResolver';
+

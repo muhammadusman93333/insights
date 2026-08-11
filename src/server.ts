@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import { defaultProps, UrduInsightPayload, urduInsightSchema } from './types';
+import { defaultProps, resolveConcretePayload, UrduInsightPayload, urduInsightSchema } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -104,17 +104,21 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     }
 
     // Merge defaults with request body
-    const payload: UrduInsightPayload = {
+    const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
       urduText: body.body || body.bodyText || body.urduText || body.hook || '',
     };
 
+    // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio
+    const payload = resolveConcretePayload(rawPayload);
+
     console.log(`\n📥 API Render Request Received:`);
     if (payload.title) console.log(`🏷️ Title: "${payload.title}"`);
     if (payload.hook) console.log(`🪝 Hook: "${payload.hook.substring(0, 50)}..."`);
     console.log(`✍️ Body: "${(payload.body || payload.urduText).substring(0, 50)}..."`);
-    console.log(`🎨 Theme: ${payload.bgTheme || 'random'}`);
+    console.log(`🎨 Theme: ${payload.bgTheme} | ✒️ Qalam: ${payload.qalam} | 🔤 Font: ${payload.fontFamily} | 🎵 Music: ${payload.bgMusic}`);
+
 
     const bundleLocation = await getBundleLocation();
 
@@ -137,7 +141,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: payload,
-      timeoutInMilliseconds: 90000,
+      timeoutInMilliseconds: 300000,
     });
 
     console.log(`✅ Render successful: ${filename}`);
