@@ -2,8 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import { UrduInsightPayload } from './types';
-import { defaultProps } from './Root';
+import { defaultProps, UrduInsightPayload } from './types';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
@@ -58,6 +57,8 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   const entryPoint = path.resolve(__dirname, 'index.ts');
   const bundleLocation = await bundle({
     entryPoint,
+    rootDir: path.resolve(process.cwd()),
+    publicDir: path.resolve(process.cwd(), 'public'),
     webpackOverride: (config) => config,
   });
 
@@ -80,6 +81,7 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     codec: 'h264',
     outputLocation: outputPath,
     inputProps: payload,
+    timeoutInMilliseconds: 90000,
     onProgress: ({ renderedFrames, encodedFrames }) => {
       const progress = Math.round(
         (encodedFrames / composition.durationInFrames) * 100

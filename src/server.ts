@@ -4,8 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import { UrduInsightPayload, urduInsightSchema } from './types';
-import { defaultProps } from './Root';
+import { defaultProps, UrduInsightPayload, urduInsightSchema } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -47,6 +46,8 @@ async function getBundleLocation(): Promise<string> {
     const entryPoint = path.resolve(__dirname, 'index.ts');
     cachedBundleLocation = await bundle({
       entryPoint,
+      rootDir: path.resolve(process.cwd()),
+      publicDir: path.resolve(process.cwd(), 'public'),
       webpackOverride: (config) => config,
     });
     console.log('✅ Remotion bundle cached ready for API requests.');
@@ -136,6 +137,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: payload,
+      timeoutInMilliseconds: 90000,
     });
 
     console.log(`✅ Render successful: ${filename}`);
