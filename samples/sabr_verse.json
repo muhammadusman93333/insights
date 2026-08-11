@@ -1,0 +1,13 @@
+{
+  "title": "آج کا سبق",
+  "surahReference": "سورۃ البقرۃ - آیت ۱۵۳",
+  "arabicAyah": "يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ",
+  "urduText": "اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔",
+  "authorOrSource": "قرآنی حکمت",
+  "bgTheme": "vintage-parchment",
+  "showPenAnimation": true,
+  "bgMusic": "audio/Sacred Breath.mp3",
+  "penScratchSound": true,
+  "penSoundSrc": "audio/qalam_sound.mp3",
+  "readingPauseSeconds": 4.5
+}

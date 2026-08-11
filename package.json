@@ -1,0 +1,45 @@
+{
+  "name": "qalam-dawaat-quran-insights",
+  "version": "1.0.0",
+  "description": "Automated 9:16 handwritten Urdu Quranic Insights video generator using Remotion",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "remotion preview src/index.ts",
+    "server": "tsx src/server.ts",
+    "build": "remotion render src/index.ts QuranHandwrittenShort out/video.mp4",
+    "render": "tsx src/render.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "remotion",
+    "react",
+    "video-generator",
+    "urdu",
+    "quran",
+    "calligraphy",
+    "qalam",
+    "youtube-shorts",
+    "reels"
+  ],
+  "dependencies": {
+    "@remotion/fonts": "^4.0.507",
+    "@remotion/google-fonts": "^4.0.240",
+    "@remotion/media-utils": "^4.0.240",
+    "@remotion/renderer": "^4.0.240",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.240"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.240",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
