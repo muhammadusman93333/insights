@@ -1,5 +1,8 @@
 import path from 'path';
 import fs from 'fs';
+import https from 'https';
+import http from 'http';
+import { URL } from 'url';
 import { renderUrduInsightVideo } from '../src/render';
 import { defaultProps, UrduInsightPayload } from '../src/types';
 
@@ -137,75 +140,124 @@ function getInputs(): {
 }
 
 /**
+ * Robust multipart/form-data uploader using native Node.js http/https
+ * Solves Node fetch Undici HeadersTimeoutError (UND_ERR_HEADERS_TIMEOUT) on large uploads
+ */
+async function uploadMultipartFile(
+  filePath: string,
+  uploadUrl: string,
+  fieldName: 'video' | 'image',
+  mimeType: string,
+  retries = 3
+): Promise<any> {
+  const fileName = path.basename(filePath);
+  const fileSize = fs.statSync(filePath).size;
+  const fileBuffer = fs.readFileSync(filePath);
+
+  const boundary = `----NodeFormBoundary${Date.now().toString(16)}${Math.random().toString(16)}`;
+  const header = Buffer.from(
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="${fieldName}"; filename="${fileName}"\r\n` +
+    `Content-Type: ${mimeType}\r\n\r\n`
+  );
+  const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+  const fullBody = Buffer.concat([header, fileBuffer, footer]);
+
+  const parsedUrl = new URL(uploadUrl);
+  const isHttps = parsedUrl.protocol === 'https:';
+  const transport = isHttps ? https : http;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`\n🚀 Uploading ${fieldName} to: ${uploadUrl} (Attempt ${attempt}/${retries})`);
+      console.log(`📁 File: ${filePath} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
+
+      const responseText = await new Promise<string>((resolve, reject) => {
+        const req = transport.request(
+          {
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || (isHttps ? 443 : 80),
+            path: parsedUrl.pathname + parsedUrl.search,
+            method: 'POST',
+            headers: {
+              'Content-Type': `multipart/form-data; boundary=${boundary}`,
+              'Content-Length': fullBody.length,
+              'User-Agent': 'RemotionVideoPipeline/1.0',
+            },
+            timeout: 600000, // 10 minutes timeout
+          },
+          (res) => {
+            let data = '';
+            res.setEncoding('utf-8');
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+                reject(
+                  new Error(
+                    `Server responded with HTTP ${res.statusCode}: ${data.substring(0, 300)}`
+                  )
+                );
+              } else {
+                resolve(data);
+              }
+            });
+          }
+        );
+
+        req.on('timeout', () => {
+          req.destroy(new Error(`Upload connection timed out after 10 minutes`));
+        });
+
+        req.on('error', (err) => {
+          reject(err);
+        });
+
+        req.write(fullBody);
+        req.end();
+      });
+
+      let jsonResult: any;
+      try {
+        jsonResult = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(
+          `Upload server responded with non-JSON: ${responseText.substring(0, 300)}`
+        );
+      }
+
+      if (jsonResult.status && jsonResult.status !== 'success') {
+        throw new Error(jsonResult.message || `Upload failed on server`);
+      }
+
+      console.log(`✅ ${fieldName} upload response received:`);
+      console.log(JSON.stringify(jsonResult, null, 2));
+      return jsonResult;
+    } catch (err: any) {
+      console.warn(`⚠️ Upload attempt ${attempt}/${retries} failed: ${err.message}`);
+      if (attempt === retries) {
+        throw err;
+      }
+      const waitMs = 3000 * attempt;
+      console.log(`⏳ Retrying in ${waitMs / 1000}s...`);
+      await new Promise((res) => setTimeout(res, waitMs));
+    }
+  }
+}
+
+/**
  * Uploads a video file to the specified PHP endpoint
  */
 async function uploadVideo(filePath: string, uploadUrl: string): Promise<any> {
-  console.log(`\n🚀 Uploading video to: ${uploadUrl}`);
-  console.log(`📁 File: ${filePath} (${(fs.statSync(filePath).size / (1024 * 1024)).toFixed(2)} MB)`);
-
-  const fileName = path.basename(filePath);
-  const fileBuffer = fs.readFileSync(filePath);
-  const blob = new Blob([fileBuffer], { type: 'video/mp4' });
-
-  const formData = new FormData();
-  formData.append('video', blob, fileName);
-
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    body: formData,
-  });
-
-  const responseText = await response.text();
-  let jsonResult: any;
-  try {
-    jsonResult = JSON.parse(responseText);
-  } catch (e) {
-    throw new Error(`Upload server responded with non-JSON (Status ${response.status}): ${responseText.substring(0, 300)}`);
-  }
-
-  if (!response.ok || (jsonResult.status && jsonResult.status !== 'success')) {
-    throw new Error(jsonResult.message || `Upload failed with status code ${response.status}`);
-  }
-
-  console.log('✅ Upload response received:');
-  console.log(JSON.stringify(jsonResult, null, 2));
-  return jsonResult;
+  return uploadMultipartFile(filePath, uploadUrl, 'video', 'video/mp4');
 }
 
 /**
  * Uploads an image / thumbnail file to the specified PHP endpoint
  */
 async function uploadThumbnail(filePath: string, uploadUrl: string): Promise<any> {
-  console.log(`\n📸 Uploading thumbnail screenshot to: ${uploadUrl}`);
-  console.log(`📁 File: ${filePath} (${(fs.statSync(filePath).size / 1024).toFixed(1)} KB)`);
-
-  const fileName = path.basename(filePath);
-  const fileBuffer = fs.readFileSync(filePath);
-  const blob = new Blob([fileBuffer], { type: 'image/png' });
-
-  const formData = new FormData();
-  formData.append('image', blob, fileName);
-
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    body: formData,
-  });
-
-  const responseText = await response.text();
-  let jsonResult: any;
-  try {
-    jsonResult = JSON.parse(responseText);
-  } catch (e) {
-    throw new Error(`Thumbnail upload server responded with non-JSON (Status ${response.status}): ${responseText.substring(0, 300)}`);
-  }
-
-  if (!response.ok || (jsonResult.status && jsonResult.status !== 'success')) {
-    throw new Error(jsonResult.message || `Thumbnail upload failed with status code ${response.status}`);
-  }
-
-  console.log('✅ Thumbnail upload response received:');
-  console.log(JSON.stringify(jsonResult, null, 2));
-  return jsonResult;
+  return uploadMultipartFile(filePath, uploadUrl, 'image', 'image/png');
 }
 
 /**
