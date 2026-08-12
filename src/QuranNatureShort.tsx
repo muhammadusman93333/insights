@@ -158,20 +158,9 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
           fontFamily={selectedFont}
           showPenAnimation={showPenAnimation}
         />
-
-        {/* 5. Bottom Source / Author / Surah badge */}
-        {authorOrSource && (
-          <NatureFooter
-            authorOrSource={authorOrSource}
-            footerStartFrame={timing.footerStartFrame}
-            accentColor={accentColor}
-            primaryColor={primaryColor}
-            fontFamily={selectedFont}
-          />
-        )}
       </NatureCanvas>
 
-      {/* 6. Ambient Background Audio + Qalam Writing Sound FX */}
+      {/* 5. Ambient Background Audio + Qalam Writing Sound FX */}
       <AudioLayer
         bgMusic={resolvedBgMusic}
         penScratchSound={penScratchSound}

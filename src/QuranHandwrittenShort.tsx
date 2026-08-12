@@ -126,16 +126,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         writingIntervals={writingIntervals}
       />
 
-      {/* 6. Bottom Source / Author stamp */}
-      {authorOrSource && (
-        <FooterCredits
-          authorOrSource={authorOrSource}
-          footerStartFrame={timing.footerStartFrame}
-          isDark={paper.isDark}
-        />
-      )}
-
-      {/* 7. Bottom-Left Ancient Candle Holder */}
+      {/* 6. Bottom-Left Ancient Candle Holder */}
       <CanvasImage
         src={staticFile("images/ancient_candle.png")}
         style={{
