@@ -95,6 +95,12 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     ? Math.max(1, timing.shiftStartFrame - 2)
     : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
 
+  const isLinux = process.platform === 'linux';
+  const chromiumOptions = {
+    gl: (isLinux ? 'swangle' : 'angle') as 'swangle' | 'angle',
+    enableMultiProcessOnLinux: true,
+  };
+
   // 1. Capture Thumbnail Screenshot when Hook is completed in center before moving up
   if (shouldCaptureScreenshot) {
     console.log(
@@ -107,6 +113,7 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
       inputProps: payload,
       frame: screenshotFrame,
       imageFormat: 'png',
+      chromiumOptions,
     });
     console.log(`✅ Thumbnail screenshot saved to: ${screenshotPath}`);
   }
@@ -124,6 +131,9 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     codec: 'h264',
     outputLocation: outputPath,
     inputProps: payload,
+    imageFormat: 'jpeg',
+    chromiumOptions,
+    concurrency: process.env.CI ? 2 : '50%',
     timeoutInMilliseconds: 300000,
     onProgress: ({ renderedFrames, encodedFrames }) => {
       const progress = Math.round(

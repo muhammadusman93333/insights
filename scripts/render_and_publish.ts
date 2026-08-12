@@ -415,6 +415,9 @@ async function main() {
       completed_at: new Date().toISOString(),
     };
 
+    console.log('📦 Webhook Payload (JSON to be sent):');
+    console.log(JSON.stringify(webhookPayload, null, 2));
+
     await sendWebhook(webhookUrl, webhookPayload);
 
     // Write GitHub Actions Step Summary
