@@ -83,9 +83,14 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   });
 
   console.log('🔍 Selecting composition...');
+  const compositionId =
+    payload.template === 'parchment' || payload.template === 'QuranHandwrittenShort'
+      ? 'QuranHandwrittenShort'
+      : 'QuranNatureShort';
+
   const composition = await selectComposition({
     serveUrl: bundleLocation,
-    id: 'QuranHandwrittenShort',
+    id: compositionId,
     inputProps: payload,
   });
 
@@ -98,7 +103,9 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   const isLinux = process.platform === 'linux';
   const chromiumOptions = {
     gl: (isLinux ? 'swangle' : 'angle') as 'swangle' | 'angle',
-    enableMultiProcessOnLinux: true,
+    enableMultiProcessOnLinux: false,
+    disableDevShmUsage: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   };
 
   // 1. Capture Thumbnail Screenshot when Hook is completed in center before moving up
@@ -136,16 +143,16 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     concurrency: process.env.CI ? 2 : '50%',
     timeoutInMilliseconds: 300000,
     onProgress: ({ renderedFrames, encodedFrames }) => {
-      const progress = Math.round(
-        (encodedFrames / composition.durationInFrames) * 100
+      const renderedPct = Math.round(
+        (renderedFrames / composition.durationInFrames) * 100
       );
-      if (progress !== lastReportedPct && progress % 5 === 0) {
-        lastReportedPct = progress;
+      if (renderedPct !== lastReportedPct && (renderedPct % 5 === 0 || renderedFrames === composition.durationInFrames)) {
+        lastReportedPct = renderedPct;
         console.log(
-          `⏳ Rendering progress: ${progress}% (${encodedFrames}/${composition.durationInFrames} frames)`
+          `⏳ Rendering progress: ${renderedPct}% (Frames: ${renderedFrames}/${composition.durationInFrames}, Encoded: ${encodedFrames}/${composition.durationInFrames})`
         );
         if (options.onProgress) {
-          options.onProgress(progress);
+          options.onProgress(renderedPct);
         }
       }
     },
@@ -179,6 +186,9 @@ async function runCli() {
   let customTitle: string | undefined;
   let customSurah: string | undefined;
   let customTheme: any;
+  let customTemplate: any;
+  let customImage: string | undefined;
+  let customPrimaryColor: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--input' || args[i] === '-i') {
@@ -205,6 +215,15 @@ async function runCli() {
     } else if (args[i] === '--theme') {
       customTheme = args[i + 1];
       i++;
+    } else if (args[i] === '--template') {
+      customTemplate = args[i + 1];
+      i++;
+    } else if (args[i] === '--image') {
+      customImage = args[i + 1];
+      i++;
+    } else if (args[i] === '--primary-color' || args[i] === '--color') {
+      customPrimaryColor = args[i + 1];
+      i++;
     }
   }
 
@@ -215,6 +234,9 @@ async function runCli() {
   if (customTitle) inputPayload.title = customTitle;
   if (customSurah) inputPayload.surahReference = customSurah;
   if (customTheme) inputPayload.bgTheme = customTheme;
+  if (customTemplate) inputPayload.template = customTemplate;
+  if (customImage) inputPayload.backgroundImage = customImage;
+  if (customPrimaryColor) inputPayload.primaryColor = customPrimaryColor;
 
   try {
     await renderUrduInsightVideo({

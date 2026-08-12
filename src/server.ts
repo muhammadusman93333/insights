@@ -109,10 +109,15 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
 
     const bundleLocation = await getBundleLocation();
 
+    const compositionId =
+      payload.template === 'parchment' || payload.template === 'QuranHandwrittenShort'
+        ? 'QuranHandwrittenShort'
+        : 'QuranNatureShort';
+
     // Select composition and compute dynamic duration
     const composition = await selectComposition({
       serveUrl: bundleLocation,
-      id: 'QuranHandwrittenShort',
+      id: compositionId,
       inputProps: payload,
     });
 
@@ -129,6 +134,14 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
     const thumbOffsetMs = Math.round((screenshotFrame / composition.fps) * 1000);
 
+    const isLinux = process.platform === 'linux';
+    const chromiumOptions = {
+      gl: (isLinux ? 'swangle' : 'angle') as 'swangle' | 'angle',
+      enableMultiProcessOnLinux: false,
+      disableDevShmUsage: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    };
+
     // Render thumbnail still
     console.log(`📸 Capturing thumbnail screenshot at frame ${screenshotFrame} (${thumbOffsetMs}ms)...`);
     await renderStill({
@@ -138,6 +151,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       inputProps: payload,
       frame: screenshotFrame,
       imageFormat: 'png',
+      chromiumOptions,
     });
 
     console.log(`🎬 Rendering ${composition.durationInFrames} frames (${(composition.durationInFrames / composition.fps).toFixed(1)}s)...`);
@@ -148,6 +162,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: payload,
+      imageFormat: 'jpeg',
+      chromiumOptions,
+      concurrency: process.env.CI ? 2 : '50%',
       timeoutInMilliseconds: 300000,
     });
 

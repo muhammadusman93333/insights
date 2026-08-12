@@ -48,7 +48,25 @@ export const urduFontFamilySchema = z.enum([
 
 export type UrduFontFamilyType = z.infer<typeof urduFontFamilySchema>;
 
+export const templateSchema = z.enum([
+  'parchment',
+  'nature',
+  'QuranHandwrittenShort',
+  'QuranNatureShort',
+]);
+
+export type TemplateType = z.infer<typeof templateSchema>;
+
 export const urduInsightSchema = z.object({
+  template: templateSchema.optional().default('nature'),
+  backgroundImage: z.string().optional().default('nature/nature_sample.jpg'),
+  primaryColor: z.string().optional().default('#2d4a22'),
+  accentColor: z.string().optional().default('#dfb76c'),
+  overlayOpacity: z.number().min(0).max(1).optional().default(0.42),
+  showGlassCard: z.boolean().optional().default(true),
+  showGodRays: z.boolean().optional().default(true),
+  showNatureParticles: z.boolean().optional().default(true),
+  kenBurnsZoom: z.number().optional().default(1.08),
   title: z.string().optional(),
   hook: z.string().optional(),
   body: z.string().optional(),
@@ -72,10 +90,20 @@ export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;
 export type CompositionProps = UrduInsightPayload;
 
 export const defaultProps: UrduInsightPayload = {
-  title: 'خاموش پکار',
+  template: 'nature',
+  backgroundImage: 'nature/nature_sample.jpg',
+  primaryColor: '#2d4a22',
+  accentColor: '#dfb76c',
+  overlayOpacity: 0.42,
+  showGlassCard: true,
+  showGodRays: true,
+  showNatureParticles: true,
+  kenBurnsZoom: 1.08,
+  title: 'سکونِ قلب',
   hook: 'کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں، تو کوئی آپ کے اندر کے شور کو نہیں سن پاتا؟',
   urduText:
     'اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔',
+  authorOrSource: 'سورۃ البقرہ - ۱۵۳',
   bgTheme: 'random',
   qalam: 'random',
   qalamScale: 6,
