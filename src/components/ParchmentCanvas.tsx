@@ -37,43 +37,6 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
         fontFamily: "'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif",
       }}
     >
-      {/* 0. SVG Filter Definitions for Burnt Deckle Edges & Paper Texture */}
-      <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
-        <defs>
-          {/* Organic burnt / torn deckle edge displacement */}
-          <filter id="parchment-deckle" x="-10%" y="-10%" width="120%" height="120%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.035"
-              numOctaves={4}
-              seed={5}
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={16}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-
-          {/* Micro paper fiber texture grain */}
-          <filter id="paper-fiber" x="0%" y="0%" width="100%" height="100%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.75"
-              numOctaves={3}
-              stitchTiles="stitch"
-              result="noise"
-            />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 0.12  0 0 0 0 0.08  0 0 0 0 0.04  0 0 0 0 0.09 0"
-            />
-          </filter>
-        </defs>
-      </svg>
       {/* 1. Atmospheric Dark Antique Desk / Hearth Backdrop */}
       <div
         style={{
@@ -92,7 +55,6 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
           top: 60,
           width: 970,
           height: 1800,
-          filter: 'url(#parchment-deckle)',
           zIndex: 2,
         }}
       >
@@ -101,10 +63,10 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
           style={{
             width: '100%',
             height: '100%',
-            borderRadius: 18,
+            borderRadius: 22,
             backgroundColor: paper.paperBgColor,
             background: paper.paperGradient,
-            boxShadow: paper.burntShadow,
+            boxShadow: paper.burntShadow || '0 25px 60px rgba(0, 0, 0, 0.75)',
             border: `3px solid ${paper.scorchedBorderColor}`,
             position: 'relative',
             overflow: 'hidden',
@@ -133,7 +95,7 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
             style={{
               position: 'absolute',
               inset: 0,
-              borderRadius: 15,
+              borderRadius: 20,
               background: paper.isDark
                 ? 'radial-gradient(ellipse at 50% 48%, transparent 55%, rgba(0, 0, 0, 0.75) 85%, rgba(0, 0, 0, 0.98) 100%)'
                 : 'radial-gradient(ellipse at 50% 48%, transparent 52%, rgba(70, 30, 8, 0.25) 75%, rgba(26, 9, 2, 0.88) 96%, rgba(12, 3, 1, 0.98) 100%)',
@@ -152,10 +114,9 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
               height: 420,
               borderRadius: '60% 40% 70% 30% / 40% 50% 60% 50%',
               background: paper.isDark
-                ? 'radial-gradient(circle, rgba(220, 160, 60, 0.06) 0%, transparent 70%)'
-                : 'radial-gradient(circle, rgba(160, 100, 40, 0.12) 0%, rgba(180, 120, 50, 0.05) 50%, transparent 75%)',
+                ? 'radial-gradient(circle at center, rgba(220, 160, 60, 0.08) 0%, rgba(220, 160, 60, 0.03) 40%, transparent 70%)'
+                : 'radial-gradient(circle at center, rgba(160, 100, 40, 0.14) 0%, rgba(180, 120, 50, 0.06) 45%, transparent 75%)',
               pointerEvents: 'none',
-              filter: 'blur(35px)',
             }}
           />
 
@@ -168,22 +129,9 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
               height: 360,
               borderRadius: '45% 55% 35% 65% / 55% 45% 60% 40%',
               background: paper.isDark
-                ? 'radial-gradient(circle, rgba(200, 140, 50, 0.05) 0%, transparent 70%)'
-                : 'radial-gradient(circle, rgba(140, 80, 25, 0.1) 0%, rgba(170, 110, 45, 0.04) 50%, transparent 75%)',
+                ? 'radial-gradient(circle at center, rgba(200, 140, 50, 0.07) 0%, rgba(200, 140, 50, 0.02) 45%, transparent 70%)'
+                : 'radial-gradient(circle at center, rgba(140, 80, 25, 0.12) 0%, rgba(170, 110, 45, 0.05) 45%, transparent 75%)',
               pointerEvents: 'none',
-              filter: 'blur(40px)',
-            }}
-          />
-
-          {/* Micro Paper Texture Grain */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              filter: 'url(#paper-fiber)',
-              opacity: 0.65,
-              pointerEvents: 'none',
-              mixBlendMode: 'overlay',
             }}
           />
         </div>
@@ -198,12 +146,11 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
           height: 800,
           borderRadius: '50%',
           background: paper.isDark
-            ? 'radial-gradient(circle, rgba(255, 170, 60, 0.28) 0%, rgba(255, 130, 30, 0.1) 45%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(255, 210, 140, 0.35) 0%, rgba(255, 170, 80, 0.12) 50%, transparent 70%)',
+            ? 'radial-gradient(circle, rgba(255, 170, 60, 0.28) 0%, rgba(255, 150, 45, 0.16) 25%, rgba(255, 130, 30, 0.07) 50%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(255, 210, 140, 0.35) 0%, rgba(255, 190, 110, 0.2) 30%, rgba(255, 170, 80, 0.08) 55%, transparent 70%)',
           transform: `scale(${candleFlicker})`,
           opacity: candleGlowOpacity,
           pointerEvents: 'none',
-          filter: 'blur(70px)',
           zIndex: 3,
         }}
       />

@@ -58,7 +58,7 @@ export const templateSchema = z.enum([
 export type TemplateType = z.infer<typeof templateSchema>;
 
 export const urduInsightSchema = z.object({
-  template: templateSchema.optional().default('nature'),
+  template: templateSchema.optional().default('parchment'),
   backgroundImage: z.string().optional().default('nature/nature_sample.jpg'),
   primaryColor: z.string().optional().default('#2d4a22'),
   accentColor: z.string().optional().default('#dfb76c'),
@@ -90,7 +90,7 @@ export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;
 export type CompositionProps = UrduInsightPayload;
 
 export const defaultProps: UrduInsightPayload = {
-  template: 'nature',
+  template: 'parchment',
   backgroundImage: 'nature/nature_sample.jpg',
   primaryColor: '#2d4a22',
   accentColor: '#dfb76c',
@@ -99,7 +99,7 @@ export const defaultProps: UrduInsightPayload = {
   showGodRays: true,
   showNatureParticles: true,
   kenBurnsZoom: 1.08,
-  title: 'سکونِ قلب',
+  title: 'خاموش پکار',
   hook: 'کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں، تو کوئی آپ کے اندر کے شور کو نہیں سن پاتا؟',
   urduText:
     'اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔',

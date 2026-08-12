@@ -66,21 +66,21 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
     Math.sin(frame * 0.12) * 3.5 + Math.sin(frame * 0.28 + 0.8) * 2.0;
   const flameGlowPulse = interpolate(flameFlicker, [-1, 1], [0.82, 1.15]);
 
-  // 2. Generate Static Seeds for Organic Smoke Puffs
+  // 2. Generate Static Seeds for Organic Smoke Puffs (Optimized count for fast rendering)
   const smokeParticles: SmokePuff[] = useMemo(() => {
     const list: SmokePuff[] = [];
-    const count = 32;
+    const count = 10;
     for (let i = 0; i < count; i++) {
       list.push({
         id: i,
-        lifeDuration: 90 + ((i * 19) % 50), // 90 to 140 frames lifetime
-        phaseOffset: (i * 27) % 130,
-        speedY: 2.8 + ((i * 7) % 1.6), // Vertical speed
-        driftX: 45 + ((i * 13) % 45), // Rightward & natural air drift
+        lifeDuration: 90 + ((i * 19) % 50),
+        phaseOffset: (i * 35) % 130,
+        speedY: 2.8 + ((i * 7) % 1.6),
+        driftX: 45 + ((i * 13) % 45),
         driftFrequency: 0.02 + ((i * 3) % 0.025),
         wobblePhase: (i * 1.7) % (Math.PI * 2),
         startSize: 14 + ((i * 5) % 10),
-        endSize: 110 + ((i * 17) % 70),
+        endSize: 100 + ((i * 17) % 50),
         maxOpacity: 0.22 + ((i * 7) % 0.14),
         rotateSpeed: (((i % 2 === 0 ? 1 : -1) * (0.4 + (i % 5) * 0.2))),
         initialOffsetX: ((i * 11) % 14) - 7,
@@ -92,7 +92,7 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
   // 3. Generate Micro Sparks / Floating Fiery Embers
   const sparks: Spark[] = useMemo(() => {
     const list: Spark[] = [];
-    const count = 9;
+    const count = 5;
     for (let i = 0; i < count; i++) {
       list.push({
         id: i,
@@ -143,11 +143,12 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
         }}
       >
         <defs>
-          {/* Flame Ambient Radial Gradients */}
+          {/* Flame Ambient Radial Gradients with built-in smooth falloff */}
           <radialGradient id="candle-wide-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ff9514" stopOpacity={0.65 * flameGlowPulse} />
-            <stop offset="35%" stopColor="#ff6500" stopOpacity={0.32 * flameGlowPulse} />
-            <stop offset="70%" stopColor="#ff3a00" stopOpacity={0.08 * flameGlowPulse} />
+            <stop offset="0%" stopColor="#ff9514" stopOpacity={0.6 * flameGlowPulse} />
+            <stop offset="25%" stopColor="#ff7500" stopOpacity={0.35 * flameGlowPulse} />
+            <stop offset="50%" stopColor="#ff5500" stopOpacity={0.15 * flameGlowPulse} />
+            <stop offset="75%" stopColor="#ff3a00" stopOpacity={0.04 * flameGlowPulse} />
             <stop offset="100%" stopColor="#ff2200" stopOpacity={0} />
           </radialGradient>
 
@@ -165,19 +166,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
             <stop offset="60%" stopColor="#cfc4b6" stopOpacity={0.16} />
             <stop offset="100%" stopColor="#b8aba0" stopOpacity={0} />
           </linearGradient>
-
-          {/* Soft Blur Filters */}
-          <filter id="flame-blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" />
-          </filter>
-
-          <filter id="halo-blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="28" />
-          </filter>
-
-          <filter id="ribbon-blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" />
-          </filter>
         </defs>
 
         {/* 1. Large Ambient Candle Glow Illuminating Corner & Canvas */}
@@ -186,7 +174,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
           cy={flameY}
           r={260 * scale}
           fill="url(#candle-wide-halo)"
-          filter="url(#halo-blur)"
           style={{ mixBlendMode: 'screen' }}
         />
 
@@ -207,7 +194,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
             stroke="url(#smoke-ribbon-grad)"
             strokeWidth={5 * scale}
             strokeLinecap="round"
-            filter="url(#ribbon-blur)"
             style={{
               mixBlendMode: isDarkTheme ? 'screen' : 'multiply',
               opacity: 0.75,
@@ -267,7 +253,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
               ? `rgba(210, 195, 180, ${currentOpacity * 0.85})`
               : `rgba(140, 125, 110, ${currentOpacity * 0.9})`;
 
-            const blurAmount = Math.max(3, 4 + progress * 14);
             const rotation = frame * p.rotateSpeed + p.id * 30;
 
             return (
@@ -280,11 +265,10 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
                   width: currentSize,
                   height: currentSize,
                   borderRadius: '50%',
-                  background: `radial-gradient(circle, ${smokeColor} 0%, ${smokeColor.replace(
+                  background: `radial-gradient(circle at center, ${smokeColor} 0%, ${smokeColor.replace(
                     /[\d\.]+\)$/,
-                    '0)'
-                  )} 70%)`,
-                  filter: `blur(${blurAmount}px)`,
+                    '0.2)'
+                  )} 40%, transparent 70%)`,
                   transform: `rotate(${rotation}deg) scale(${1 + progress * 0.3})`,
                   mixBlendMode: isDarkTheme ? 'screen' : 'multiply',
                   pointerEvents: 'none',

@@ -126,10 +126,9 @@ export const NatureBackdrop: React.FC<NatureBackdropProps> = ({
             inset: 0,
             opacity: godRaysOpacity,
             pointerEvents: 'none',
-            background: `linear-gradient(135deg, rgba(255, 245, 200, 0.45) 0%, rgba(255, 230, 160, 0.15) 35%, transparent 70%),
-                         linear-gradient(115deg, transparent 20%, rgba(255, 250, 220, 0.3) 45%, transparent 65%)`,
+            background: `linear-gradient(135deg, rgba(255, 245, 200, 0.45) 0%, rgba(255, 235, 170, 0.25) 20%, rgba(255, 230, 160, 0.1) 40%, transparent 70%),
+                         linear-gradient(115deg, transparent 20%, rgba(255, 250, 220, 0.25) 45%, transparent 65%)`,
             mixBlendMode: 'screen',
-            filter: 'blur(25px)',
           }}
         />
       )}
@@ -159,9 +158,8 @@ export const NatureBackdrop: React.FC<NatureBackdropProps> = ({
                   height: p.size,
                   borderRadius: '50%',
                   backgroundColor: '#fff3b0',
-                  boxShadow: `0 0 ${p.size * 3}px ${p.size}px rgba(255, 225, 130, 0.85)`,
+                  boxShadow: `0 0 ${p.size * 2}px rgba(255, 225, 130, 0.85)`,
                   opacity: pulse,
-                  filter: 'blur(0.5px)',
                 }}
               />
             );
