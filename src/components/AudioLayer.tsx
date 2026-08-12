@@ -89,9 +89,7 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
             key={`qalam_sfx_${idx}_${startFrame}`}
             from={startFrame}
             durationInFrames={30}
-            style={{
-              translate: "-21.5px 0px"
-            }}>
+          >
             <Audio src={resolvedPenSoundSrc} volume={penVolume} />
           </Sequence>
         ))}

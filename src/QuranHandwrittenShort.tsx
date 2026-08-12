@@ -52,7 +52,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
     return resolveAudioTrack(bgMusic);
   }, [bgMusic]);
 
-  // Writing intervals for Qalam pen sound synchronization
+  // Writing intervals for Qalam pen sound synchronization (one interval per section)
   const writingIntervals = useMemo(() => {
     const intervals: { startFrame: number; endFrame: number }[] = [];
     if (timing.hookLines.length > 0 && timing.hookEndFrame > timing.hookStartFrame) {
@@ -66,8 +66,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         startFrame: timing.bodyStartFrame,
         endFrame: timing.bodyEndFrame,
       });
-    }
-    if (timing.urduLines.length > 0 && timing.urduEndFrame > timing.urduStartFrame) {
+    } else if (timing.hookLines.length === 0 && timing.urduLines.length > 0 && timing.urduEndFrame > timing.urduStartFrame) {
       intervals.push({
         startFrame: timing.urduStartFrame,
         endFrame: timing.urduEndFrame,
@@ -110,6 +109,10 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         bodyLines={timing.bodyLines}
         bodyStartFrame={timing.bodyStartFrame}
         bodyEndFrame={timing.bodyEndFrame}
+        shiftStartFrame={timing.shiftStartFrame}
+        shiftEndFrame={timing.shiftEndFrame}
+        shouldShift={timing.shouldShift}
+        centerOffsetY={520}
         urduLines={timing.urduLines}
         urduStartFrame={timing.urduStartFrame}
         urduEndFrame={timing.urduEndFrame}
@@ -119,10 +122,8 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         fontFamily={selectedFont}
         showPenAnimation={showPenAnimation}
       />
-
       {/* 4. Subtle floating golden light motes / bokeh & dust particles */}
       <DustParticles count={34} isDarkTheme={paper.isDark} />
-
       {/* 5. Ambient Background Audio + Qalam Writing Sound FX */}
       <AudioLayer
         bgMusic={resolvedBgMusic}
@@ -130,7 +131,6 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         penSoundSrc={penSoundSrc}
         writingIntervals={writingIntervals}
       />
-
       {/* 6. Bottom-Left Ancient Candle Holder */}
       <CanvasImage
         src={staticFile("images/ancient_candle.png")}
@@ -141,9 +141,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
           height: 1024,
           scale: "0.628 0.641",
           pointerEvents: "none",
-        }}
-      />
-
+        }} />
       {/* 8. Flaming, Flickering Light Corona, Floating Embers & Rising Smoke from Candle */}
       <CandleFlameSmoke
         flameX={133}
@@ -154,7 +152,6 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         showSparks={true}
         isDarkTheme={paper.isDark}
       />
-
       {/* 9. Top-Right Dawaat (Ink Pot) */}
       <CanvasImage
         src={staticFile("images/dawaat.png")}

@@ -65,7 +65,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
     };
   }, [accentColor]);
 
-  // Writing intervals for Qalam pen sound synchronization
+  // Writing intervals for Qalam pen sound synchronization (one interval per section)
   const writingIntervals = useMemo(() => {
     const intervals: { startFrame: number; endFrame: number }[] = [];
     if (timing.hookLines.length > 0 && timing.hookEndFrame > timing.hookStartFrame) {
@@ -79,8 +79,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
         startFrame: timing.bodyStartFrame,
         endFrame: timing.bodyEndFrame,
       });
-    }
-    if (timing.urduLines.length > 0 && timing.urduEndFrame > timing.urduStartFrame) {
+    } else if (timing.hookLines.length === 0 && timing.urduLines.length > 0 && timing.urduEndFrame > timing.urduStartFrame) {
       intervals.push({
         startFrame: timing.urduStartFrame,
         endFrame: timing.urduEndFrame,
