@@ -350,13 +350,18 @@ async function main() {
     let thumbData: any = undefined;
     if (renderResult.screenshotPath && fs.existsSync(renderResult.screenshotPath)) {
       console.log('\n📸 Step 3/4: Uploading thumbnail image to live server...');
-      const uploadThumbResult = await uploadThumbnail(renderResult.screenshotPath, uploadUrl);
-      thumbData = uploadThumbResult.data;
-      thumbnailUrl =
-        uploadThumbResult.data?.url ||
-        uploadThumbResult.url ||
-        `https://uvisionpk.com/insights/uploads/${uploadThumbResult.data?.file_name || thumbFileName}`;
-      console.log(`\n🖼️ Public Thumbnail URL: ${thumbnailUrl}`);
+      try {
+        const uploadThumbResult = await uploadThumbnail(renderResult.screenshotPath, uploadUrl);
+        thumbData = uploadThumbResult.data;
+        thumbnailUrl =
+          uploadThumbResult.data?.url ||
+          uploadThumbResult.url ||
+          `https://uvisionpk.com/insights/uploads/${uploadThumbResult.data?.file_name || thumbFileName}`;
+        console.log(`\n🖼️ Public Thumbnail URL: ${thumbnailUrl}`);
+      } catch (thumbErr: any) {
+        console.warn(`\n⚠️ Thumbnail upload warning: ${thumbErr.message}`);
+        console.warn('💡 Tip: Ensure upload_video.php on https://uvisionpk.com allows .png image uploads.');
+      }
     }
 
     // 4. Send Webhook Notification to Make.com

@@ -192,18 +192,18 @@ export const ParchmentCanvas: React.FC<ParchmentCanvasProps> = ({
       <div
         style={{
           position: 'absolute',
-          top: '2%',
-          left: '18%',
-          width: 700,
-          height: 700,
+          bottom: '22%',
+          left: '-5%',
+          width: 800,
+          height: 800,
           borderRadius: '50%',
           background: paper.isDark
-            ? 'radial-gradient(circle, rgba(255, 180, 70, 0.22) 0%, rgba(255, 150, 40, 0.08) 45%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(255, 230, 160, 0.38) 0%, rgba(255, 200, 100, 0.15) 50%, transparent 70%)',
+            ? 'radial-gradient(circle, rgba(255, 170, 60, 0.28) 0%, rgba(255, 130, 30, 0.1) 45%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(255, 210, 140, 0.35) 0%, rgba(255, 170, 80, 0.12) 50%, transparent 70%)',
           transform: `scale(${candleFlicker})`,
           opacity: candleGlowOpacity,
           pointerEvents: 'none',
-          filter: 'blur(60px)',
+          filter: 'blur(70px)',
           zIndex: 3,
         }}
       />
