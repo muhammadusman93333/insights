@@ -95,7 +95,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
-      urduText: body.body || body.bodyText || body.urduText || body.hook || '',
+      urduText: body.body || body.bodyText || body.urduText || '',
     };
 
     // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio

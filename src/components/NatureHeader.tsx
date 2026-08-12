@@ -34,7 +34,7 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
     extrapolateRight: 'clamp',
   });
 
-  // Smooth center-to-top glide animation
+  // Smooth center-to-top glide animation (stays centered if only Hook is rendered)
   const shiftY =
     shouldShift && shiftEndFrame > shiftStartFrame
       ? interpolate(frame, [shiftStartFrame, shiftEndFrame], [centerOffsetY, 0], {
@@ -42,9 +42,7 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
           extrapolateRight: 'clamp',
           easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
         })
-      : shouldShift
-      ? centerOffsetY
-      : 0;
+      : centerOffsetY;
 
   const totalTranslateY = entranceSlide + shiftY;
 

@@ -117,7 +117,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   let isPenActive = false;
   let penOpacity = 0;
 
-  // Smooth center-to-top glide animation offset for Hook lines
+  // Smooth center-to-top glide animation offset for Hook lines (stays centered if only Hook is rendered)
   const hookShiftY = shouldShift && shiftEndFrame > shiftStartFrame
     ? interpolate(
         frame,
@@ -130,7 +130,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
             t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
         }
       )
-    : (shouldShift ? centerOffsetY : 0);
+    : centerOffsetY;
 
   // 1. Calculate Hook Lines
   const totalHookFrames = Math.max(1, hookEndFrame - hookStartFrame);

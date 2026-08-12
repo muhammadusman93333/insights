@@ -95,6 +95,11 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
       <BismillahHeader
         title={title}
         isDark={paper.isDark}
+        shiftStartFrame={timing.shiftStartFrame}
+        shiftEndFrame={timing.shiftEndFrame}
+        shouldShift={timing.shouldShift}
+        centerOffsetY={520}
+        fontFamily={selectedFont}
       />
 
       {/* 2 & 3. Synchronized Handwritten Calligraphy Text (Hook + Insight Body) */}

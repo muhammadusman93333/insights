@@ -127,9 +127,11 @@ function getInputs(): {
   };
 
   // Support alternate text keys
-  if (rawInputs.body || rawInputs.bodyText) {
-    payload.urduText = (rawInputs.body || rawInputs.bodyText || payload.urduText) as string;
-  }
+  const resolvedBody =
+    rawInputs.urduText !== undefined
+      ? rawInputs.urduText
+      : rawInputs.body || rawInputs.bodyText || parsedPayloadJson.urduText || parsedPayloadJson.body || parsedPayloadJson.bodyText || '';
+  payload.urduText = resolvedBody as string;
 
   return {
     payload,

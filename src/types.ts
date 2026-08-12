@@ -101,8 +101,7 @@ export const defaultProps: UrduInsightPayload = {
   kenBurnsZoom: 1.08,
   title: 'خاموش پکار',
   hook: 'کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں، تو کوئی آپ کے اندر کے شور کو نہیں سن پاتا؟',
-  urduText:
-    'اے ایمان والو! صبر اور نماز کے ذریعے مدد طلب کرو۔ یقیناً اللہ صبر کرنے والوں کے ساتھ ہے۔',
+  urduText: '',
   bgTheme: 'random',
   qalam: 'random',
   qalamScale: 6,

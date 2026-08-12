@@ -43,7 +43,7 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
     extrapolateRight: 'clamp',
   });
 
-  // Smooth center-to-top glide animation
+  // Smooth center-to-top glide animation (stays centered if only Hook is rendered)
   const shiftY = shouldShift && shiftEndFrame > shiftStartFrame
     ? interpolate(
         frame,
@@ -56,7 +56,7 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
             t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
         }
       )
-    : (shouldShift ? centerOffsetY : 0);
+    : centerOffsetY;
 
   const totalTranslateY = entranceSlide + shiftY;
 
