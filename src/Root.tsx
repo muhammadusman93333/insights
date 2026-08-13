@@ -2,7 +2,6 @@ import React from 'react';
 import { Composition } from 'remotion';
 import { QuranHandwrittenShort } from './QuranHandwrittenShort';
 import { QuranNatureShort } from './QuranNatureShort';
-import { CandleFlameSmokeExport } from './CandleFlameSmokeExport';
 import { defaultProps, urduInsightSchema } from './types';
 import { calculateVideoDurationFrames, FPS } from './utils/timing';
 
@@ -42,17 +41,8 @@ export const Root: React.FC = () => {
           };
         }}
       />
-
-      {/* 3. Export Candle Flame & Smoke Video with Transparency */}
-      <Composition
-        id="CandleFlameSmokeExport"
-        component={CandleFlameSmokeExport}
-        durationInFrames={300}
-        fps={30}
-        width={1080}
-        height={1920}
-      />
     </>
   );
 };
+
 

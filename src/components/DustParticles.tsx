@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useCurrentFrame } from 'remotion';
+import { createGlowDot } from '../utils/canvasGlow';
 
 interface DustParticlesProps {
   count?: number;
@@ -22,6 +23,12 @@ interface Particle {
   haloScale: number;
 }
 
+// Pre-render blurred dots once at startup to avoid runtime CPU blurs
+const BOKEH_LIGHT_MOTE = createGlowDot('rgba(255, 215, 130, 0.45)', 128);
+const BOKEH_DARK_MOTE = createGlowDot('rgba(255, 200, 100, 0.5)', 128);
+const STANDARD_LIGHT_MOTE = createGlowDot('rgba(255, 210, 110, 0.8)', 64);
+const STANDARD_DARK_MOTE = createGlowDot('rgba(230, 160, 60, 0.8)', 64);
+
 export const DustParticles: React.FC<DustParticlesProps> = ({
   count = 16,
   isDarkTheme = false,
@@ -31,7 +38,6 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
   const particles: Particle[] = useMemo(() => {
     const list: Particle[] = [];
     for (let i = 0; i < count; i++) {
-      // Divide particles into 3 layers: large soft bokeh orbs, glowing golden motes, and twinkling sparkles
       let type: 'bokeh' | 'mote' | 'sparkle' = 'mote';
       let size = 0;
       let blur = 0;
@@ -39,21 +45,18 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
       let baseOpacity = 0.5;
 
       if (i % 5 === 0) {
-        // Large dreamy bokeh light orbs
         type = 'bokeh';
         size = 36 + ((i * 19) % 28);
         blur = 0;
         haloScale = 2.5;
         baseOpacity = 0.18 + ((i * 7) % 0.12);
       } else if (i % 6 === 1) {
-        // Occasional diamond / star twinkling light specks
         type = 'sparkle';
         size = 14 + ((i * 11) % 8);
         blur = 0;
         haloScale = 3;
         baseOpacity = 0.55 + ((i * 13) % 0.25);
       } else {
-        // Medium luminous golden light motes
         type = 'mote';
         size = 8 + ((i * 17) % 14);
         blur = 0;
@@ -91,16 +94,12 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
       }}
     >
       {particles.map((p) => {
-        // Smooth continuous looping vertical ascent
         const yPos = (p.initialY - frame * p.speedY * 1.5 + 1920) % 1920;
-
-        // Multi-frequency organic wandering & drifting
         const xOffset =
           Math.sin(frame * p.wobbleSpeed + p.id * 1.4) * p.wobbleRadius +
           Math.sin(frame * (p.wobbleSpeed * 0.5) + p.id) * 10;
         const xPos = (p.initialX + xOffset + 1080) % 1080;
 
-        // Twinkle / shimmer pulsation
         const pulse =
           0.65 +
           0.35 *
@@ -120,11 +119,9 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
                 top: yPos - p.size / 2,
                 width: p.size,
                 height: p.size,
-                borderRadius: '50%',
-                background: isDarkTheme
-                  ? `radial-gradient(circle at center, rgba(255, 215, 130, ${currentOpacity}) 0%, rgba(255, 175, 70, ${currentOpacity * 0.35}) 45%, transparent 70%)`
-                  : `radial-gradient(circle at center, rgba(255, 200, 100, ${currentOpacity * 1.1}) 0%, rgba(220, 150, 50, ${currentOpacity * 0.4}) 45%, transparent 70%)`,
-                mixBlendMode: isDarkTheme ? 'screen' : 'multiply',
+                backgroundImage: `url(${isDarkTheme ? BOKEH_DARK_MOTE : BOKEH_LIGHT_MOTE})`,
+                backgroundSize: 'cover',
+                opacity: currentOpacity,
                 pointerEvents: 'none',
               }}
             />
@@ -147,17 +144,15 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
                 height: p.size,
                 transform: `rotate(${rotateDeg}deg)`,
                 pointerEvents: 'none',
-                mixBlendMode: 'screen',
               }}
             >
-              {/* Central Intense Light Core */}
+              {/* Central Intense Light Core using static glow dot instead of dynamic boxShadow */}
               <div
                 style={{
                   position: 'absolute',
-                  inset: '25%',
-                  borderRadius: '50%',
-                  background: '#ffffff',
-                  boxShadow: `0 0 ${p.size}px rgba(255, 220, 120, ${starGlow})`,
+                  inset: 0,
+                  backgroundImage: `url(${isDarkTheme ? STANDARD_DARK_MOTE : STANDARD_LIGHT_MOTE})`,
+                  backgroundSize: 'cover',
                   opacity: starGlow,
                 }}
               />
@@ -190,9 +185,6 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
         }
 
         // Standard Glowing Luminous Mote with Halo
-        const glowColor = isDarkTheme ? '255, 210, 110' : '230, 160, 60';
-        const coreColor = isDarkTheme ? '255, 255, 230' : '255, 240, 200';
-
         return (
           <div
             key={p.id}
@@ -202,9 +194,9 @@ export const DustParticles: React.FC<DustParticlesProps> = ({
               top: yPos - p.size / 2,
               width: p.size,
               height: p.size,
-              borderRadius: '50%',
-              background: `radial-gradient(circle at center, rgba(${coreColor}, ${currentOpacity * 1.1}) 0%, rgba(${glowColor}, ${currentOpacity * 0.7}) 40%, transparent 70%)`,
-              mixBlendMode: 'screen',
+              backgroundImage: `url(${isDarkTheme ? STANDARD_DARK_MOTE : STANDARD_LIGHT_MOTE})`,
+              backgroundSize: 'cover',
+              opacity: currentOpacity,
               pointerEvents: 'none',
             }}
           />

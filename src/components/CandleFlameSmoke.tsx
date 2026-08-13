@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { interpolate, useCurrentFrame } from 'remotion';
+import { interpolate, useCurrentFrame, Img, staticFile } from 'remotion';
+import { createGlowDot, createFlameImage } from '../utils/canvasGlow';
 
 interface CandleFlameSmokeProps {
   /** X coordinate of candle flame base on 1080x1920 canvas (default: ~139px) */
@@ -42,6 +43,15 @@ interface Spark {
   wobbleSpeed: number;
   size: number;
 }
+
+// Pre-render static glows once at startup to avoid runtime CPU filter blurs
+const CANDLE_GLOW_WIDE = createGlowDot('rgba(255, 149, 20, 0.45)', 512);
+const CANDLE_GLOW_CORE = createGlowDot('rgba(255, 240, 200, 0.85)', 256);
+const SMOKE_PUFF_LIGHT = createGlowDot('rgba(215, 160, 95, 0.35)', 128);
+const SMOKE_PUFF_DARK = createGlowDot('rgba(210, 195, 180, 0.3)', 128);
+const SMOKE_PUFF_COOL_LIGHT = createGlowDot('rgba(140, 125, 110, 0.25)', 128);
+const SMOKE_PUFF_COOL_DARK = createGlowDot('rgba(140, 125, 110, 0.2)', 128);
+const FLAME_IMAGE = createFlameImage();
 
 export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
   flameX = 133,
@@ -133,61 +143,57 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
         zIndex: 12,
       }}
     >
-      <svg
+      {/* 1. Large Ambient Candle Glow (drawn using pre-rendered texture for high performance) */}
+      <div
         style={{
           position: 'absolute',
-          inset: 0,
-          width: 1080,
-          height: 1920,
+          left: flameX,
+          top: flameY,
+          width: 520 * scale,
+          height: 520 * scale,
+          transform: 'translate(-50%, -50%)',
+          backgroundImage: `url(${CANDLE_GLOW_WIDE})`,
+          backgroundSize: 'cover',
+          opacity: flameGlowPulse,
           pointerEvents: 'none',
         }}
-      >
-        <defs>
-          {/* Flame Ambient Radial Gradients with built-in smooth falloff */}
-          <radialGradient id="candle-wide-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ff9514" stopOpacity={0.6 * flameGlowPulse} />
-            <stop offset="25%" stopColor="#ff7500" stopOpacity={0.35 * flameGlowPulse} />
-            <stop offset="50%" stopColor="#ff5500" stopOpacity={0.15 * flameGlowPulse} />
-            <stop offset="75%" stopColor="#ff3a00" stopOpacity={0.04 * flameGlowPulse} />
-            <stop offset="100%" stopColor="#ff2200" stopOpacity={0} />
-          </radialGradient>
+      />
 
-          <radialGradient id="candle-core-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fff6d2" stopOpacity={0.95 * flameGlowPulse} />
-            <stop offset="30%" stopColor="#ffb834" stopOpacity={0.75 * flameGlowPulse} />
-            <stop offset="70%" stopColor="#ff7700" stopOpacity={0.25 * flameGlowPulse} />
-            <stop offset="100%" stopColor="#ff5500" stopOpacity={0} />
-          </radialGradient>
+      {/* 2. Concentrated Near-Field Flame Core Glow */}
+      <div
+        style={{
+          position: 'absolute',
+          left: flameX,
+          top: flameY - 10 * scale,
+          width: 190 * scale,
+          height: 190 * scale,
+          transform: 'translate(-50%, -50%)',
+          backgroundImage: `url(${CANDLE_GLOW_CORE})`,
+          backgroundSize: 'cover',
+          opacity: flameGlowPulse,
+          pointerEvents: 'none',
+        }}
+      />
 
-          {/* Smoke Ribbon Gradient */}
-          <linearGradient id="smoke-ribbon-grad" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#ffd899" stopOpacity={0.45} />
-            <stop offset="25%" stopColor="#e8cfb0" stopOpacity={0.32} />
-            <stop offset="60%" stopColor="#cfc4b6" stopOpacity={0.16} />
-            <stop offset="100%" stopColor="#b8aba0" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-
-        {/* 1. Large Ambient Candle Glow Illuminating Corner & Canvas */}
-        <circle
-          cx={flameX}
-          cy={flameY}
-          r={260 * scale}
-          fill="url(#candle-wide-halo)"
-          style={{ mixBlendMode: 'screen' }}
-        />
-
-        {/* 2. Concentrated Near-Field Flame Core Glow */}
-        <circle
-          cx={flameX}
-          cy={flameY - 10 * scale}
-          r={95 * scale}
-          fill="url(#candle-core-halo)"
-          style={{ mixBlendMode: 'screen' }}
-        />
-
-        {/* 3. Wispy Smoke Tendril / Ribbon */}
-        {showSmoke && (
+      {/* 3. Wispy Smoke Tendril / Ribbon */}
+      {showSmoke && (
+        <svg
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: 1080,
+            height: 1920,
+            pointerEvents: 'none',
+          }}
+        >
+          <defs>
+            <linearGradient id="smoke-ribbon-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#ffd899" stopOpacity={0.45} />
+              <stop offset="25%" stopColor="#e8cfb0" stopOpacity={0.32} />
+              <stop offset="60%" stopColor="#cfc4b6" stopOpacity={0.16} />
+              <stop offset="100%" stopColor="#b8aba0" stopOpacity={0} />
+            </linearGradient>
+          </defs>
           <path
             d={ribbonPath}
             fill="none"
@@ -195,12 +201,11 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
             strokeWidth={5 * scale}
             strokeLinecap="round"
             style={{
-              mixBlendMode: isDarkTheme ? 'screen' : 'multiply',
               opacity: 0.75,
             }}
           />
-        )}
-      </svg>
+        </svg>
+      )}
 
       {/* 4. Organic Volumetric Smoke Puffs */}
       {showSmoke && (
@@ -213,13 +218,11 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
         >
           {smokeParticles.map((p) => {
             const age = (frame + p.phaseOffset) % p.lifeDuration;
-            const progress = age / p.lifeDuration; // 0.0 to 1.0
+            const progress = age / p.lifeDuration;
 
-            // Physics calculation: smooth deceleration upwards + natural curling draft
             const easeY = 1 - Math.pow(1 - progress, 1.4);
             const currentY = smokeOriginY - easeY * (520 * scale);
             
-            // Horizontal drifting with gentle wind and turbulence
             const driftProgress = Math.sin(progress * Math.PI * 1.5 + p.wobblePhase);
             const currentX =
               smokeOriginX +
@@ -227,11 +230,9 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
               progress * (p.driftX * scale) +
               driftProgress * (18 * scale);
 
-            // Expansion & Dissipation
             const currentSize =
               (p.startSize + (p.endSize - p.startSize) * Math.pow(progress, 0.8)) * scale;
 
-            // Opacity curve: soft fade in at wick, strong body, gradual vanishing
             let currentOpacity = 0;
             if (progress < 0.15) {
               currentOpacity = interpolate(progress, [0, 0.15], [0, p.maxOpacity]);
@@ -243,15 +244,14 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
               );
             }
 
-            // Warm golden illuminated smoke near candle, cooling to parchment incense smoke higher up
             const isNearFlame = progress < 0.28;
-            const smokeColor = isNearFlame
+            const smokeImage = isNearFlame
               ? isDarkTheme
-                ? `rgba(255, 205, 130, ${currentOpacity * 1.2})`
-                : `rgba(215, 160, 95, ${currentOpacity * 1.1})`
+                ? SMOKE_PUFF_DARK
+                : SMOKE_PUFF_LIGHT
               : isDarkTheme
-              ? `rgba(210, 195, 180, ${currentOpacity * 0.85})`
-              : `rgba(140, 125, 110, ${currentOpacity * 0.9})`;
+              ? SMOKE_PUFF_COOL_DARK
+              : SMOKE_PUFF_COOL_LIGHT;
 
             const rotation = frame * p.rotateSpeed + p.id * 30;
 
@@ -264,13 +264,10 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
                   top: currentY - currentSize / 2,
                   width: currentSize,
                   height: currentSize,
-                  borderRadius: '50%',
-                  background: `radial-gradient(circle at center, ${smokeColor} 0%, ${smokeColor.replace(
-                    /[\d\.]+\)$/,
-                    '0.2)'
-                  )} 40%, transparent 70%)`,
+                  backgroundImage: `url(${smokeImage})`,
+                  backgroundSize: 'cover',
+                  opacity: currentOpacity,
                   transform: `rotate(${rotation}deg) scale(${1 + progress * 0.3})`,
-                  mixBlendMode: isDarkTheme ? 'screen' : 'multiply',
                   pointerEvents: 'none',
                 }}
               />
@@ -279,79 +276,27 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
         </div>
       )}
 
-      {/* 5. Animated Procedural Candle Flame (Realistic Dancing Multi-Layer Flame) */}
+      {/* 5. Animated Procedural Candle Flame (Pre-rendered single image for maximum speed) */}
       {showFlame && (
         <div
           style={{
             position: 'absolute',
             left: flameX,
             top: flameY,
-            transform: `translate(-50%, -100%) scale(${scale})`,
-            pointerEvents: 'none',
+            width: 64 * scale,
+            height: 128 * scale,
+            transform: `translate(-50%, -100%) scale(${flameWidthScale}, ${flameHeightScale}) rotate(${flameSwayDeg}deg)`,
             transformOrigin: 'bottom center',
+            pointerEvents: 'none',
           }}
         >
-          {/* Flame Base Container with Organic Sway and Height/Width Breathing */}
-          <div
+          <Img
+            src={FLAME_IMAGE}
             style={{
-              position: 'relative',
-              width: 32,
-              height: 72,
-              transformOrigin: 'bottom center',
-              transform: `scale(${flameWidthScale}, ${flameHeightScale}) rotate(${flameSwayDeg}deg)`,
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
             }}
-          >
-            {/* A. Outer Fiery Orange/Gold Teardrop Flame Body */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 2,
-                width: 24,
-                height: 58,
-                borderRadius: '50% 50% 35% 35% / 60% 60% 40% 40%',
-                background:
-                  'linear-gradient(to top, rgba(255, 60, 0, 0.95) 0%, rgba(255, 140, 0, 0.95) 30%, rgba(255, 215, 20, 0.98) 70%, rgba(255, 250, 210, 1) 100%)',
-                boxShadow:
-                  '0 0 14px 4px rgba(255, 140, 0, 0.85), 0 0 28px 10px rgba(255, 80, 0, 0.45)',
-                filter: 'url(#flame-blur)',
-                mixBlendMode: 'screen',
-              }}
-            />
-
-            {/* B. Inner Brilliant White-Hot Teardrop Core */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 4,
-                width: 12,
-                height: 32,
-                borderRadius: '50% 50% 35% 35% / 60% 60% 40% 40%',
-                background:
-                  'linear-gradient(to top, rgba(255, 230, 140, 0.8) 0%, rgba(255, 255, 255, 1) 50%, #ffffff 100%)',
-                boxShadow: '0 0 8px 3px rgba(255, 255, 255, 0.9)',
-                filter: 'blur(0.6px)',
-                mixBlendMode: 'screen',
-              }}
-            />
-
-            {/* C. Physical Blue Flame Base (Oxygen rich combustion zone at wick) */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: -2,
-                width: 14,
-                height: 10,
-                borderRadius: '50%',
-                background:
-                  'radial-gradient(circle, rgba(70, 140, 255, 0.85) 0%, rgba(30, 80, 220, 0.4) 60%, transparent 100%)',
-                filter: 'blur(0.8px)',
-                mixBlendMode: 'screen',
-              }}
-            />
-          </div>
+          />
         </div>
       )}
 
@@ -374,17 +319,9 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
               progress * (s.driftX * scale);
             const sparkX = flameX + sparkDrift;
 
-            // Spark cools from yellow-white to red-orange to transparent
             let sparkColor = '#fff5a0';
-            let sparkGlow = 'rgba(255, 200, 50, 0.8)';
-            if (progress > 0.4) {
-              sparkColor = '#ff9922';
-              sparkGlow = 'rgba(255, 120, 20, 0.6)';
-            }
-            if (progress > 0.75) {
-              sparkColor = '#ff4411';
-              sparkGlow = 'rgba(255, 50, 0, 0.3)';
-            }
+            if (progress > 0.4) sparkColor = '#ff9922';
+            if (progress > 0.75) sparkColor = '#ff4411';
 
             const sparkOpacity = interpolate(
               progress,
@@ -400,13 +337,11 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
                   left: sparkX,
                   top: sparkY,
                   width: s.size * scale,
-                  height: s.size * scale * (1 + (1 - progress) * 0.8), // slight vertical stretch while moving fast
+                  height: s.size * scale * (1 + (1 - progress) * 0.8),
                   borderRadius: '50%',
                   backgroundColor: sparkColor,
-                  boxShadow: `0 0 ${s.size * 3}px ${sparkGlow}`,
                   opacity: sparkOpacity,
-                  filter: 'blur(0.3px)',
-                  mixBlendMode: 'screen',
+                  pointerEvents: 'none',
                 }}
               />
             );

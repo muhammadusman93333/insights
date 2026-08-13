@@ -1,4 +1,4 @@
-import { staticFile, CanvasImage, OffthreadVideo, Loop } from 'remotion';
+import { staticFile, CanvasImage } from 'remotion';
 import React, { useMemo } from 'react';
 import { CompositionProps } from './types';
 import { calculateVideoTiming } from './utils/timing';
@@ -10,8 +10,10 @@ import { ParchmentCanvas } from './components/ParchmentCanvas';
 import { IslamicBorders } from './components/IslamicBorders';
 import { BismillahHeader } from './components/BismillahHeader';
 import { HandwrittenUrduText } from './components/HandwrittenUrduText';
+import { DustParticles } from './components/DustParticles';
 import { AudioLayer } from './components/AudioLayer';
 import { FooterCredits } from './components/FooterCredits';
+import { CandleFlameSmoke } from './components/CandleFlameSmoke';
 
 export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
   const {
@@ -125,20 +127,31 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         penSoundSrc={penSoundSrc}
         writingIntervals={writingIntervals}
       />
-      {/* 6 & 8. Bottom-Left Animated Candle (Pre-rendered transparent WebM for high-performance CPU rendering on GitHub Actions) */}
-      <Loop durationInFrames={300}>
-        <OffthreadVideo
-          src={staticFile("images/ancient_candle_animated.webm")}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: 1080,
-            height: 1920,
-            pointerEvents: "none",
-          }}
-          transparent
-        />
-      </Loop>
+      {/* 4. Subtle floating golden light motes / bokeh & dust particles */}
+      <DustParticles count={34} isDarkTheme={paper.isDark} />
+
+      {/* 6. Bottom-Left Ancient Candle Holder (aligned to user's corrected positions) */}
+      <CanvasImage
+        src={staticFile("images/ancient_candle.png")}
+        style={{
+          position: "absolute",
+          translate: "-377.6px 1159.7px",
+          width: 1024,
+          height: 1024,
+          scale: "0.628 0.641",
+          pointerEvents: "none",
+        }}
+      />
+      {/* 8. Flaming, Flickering Light Corona, Floating Embers & Rising Smoke from Candle */}
+      <CandleFlameSmoke
+        flameX={133}
+        flameY={1530}
+        scale={1.35}
+        showFlame={true}
+        showSmoke={true}
+        showSparks={true}
+        isDarkTheme={paper.isDark}
+      />
       {/* 9. Top-Right Dawaat (Ink Pot) */}
       <CanvasImage
         src={staticFile("images/dawaat2.png")}
