@@ -23,6 +23,7 @@
     "reels"
   ],
   "dependencies": {
+    "@remotion/effects": "4.0.507",
     "@remotion/fonts": "^4.0.507",
     "@remotion/google-fonts": "^4.0.240",
     "@remotion/media-utils": "^4.0.240",

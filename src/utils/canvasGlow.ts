@@ -42,9 +42,9 @@ export function createFlameImage(): string {
 
   // 1. Outer Fiery Orange/Gold Teardrop Body
   const gradOuter = ctx.createLinearGradient(32, 120, 32, 20);
-  gradOuter.addColorStop(0, 'rgba(255, 60, 0, 0.95)');
-  gradOuter.addColorStop(0.3, 'rgba(255, 140, 0, 0.95)');
-  gradOuter.addColorStop(0.7, 'rgba(255, 215, 20, 0.98)');
+  gradOuter.addColorStop(0, 'rgba(255, 253, 226, 0.95)');
+  gradOuter.addColorStop(0.3, 'rgba(252, 239, 222, 0.95)');
+  gradOuter.addColorStop(0.7, 'rgba(253, 248, 223, 0.98)');
   gradOuter.addColorStop(1, 'rgba(255, 250, 210, 1)');
 
   ctx.fillStyle = gradOuter;

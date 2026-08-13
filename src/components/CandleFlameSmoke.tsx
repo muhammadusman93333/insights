@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { interpolate, useCurrentFrame, Img, staticFile } from 'remotion';
 import { createGlowDot, createFlameImage } from '../utils/canvasGlow';
+import { brightness } from "@remotion/effects/brightness";
 
 interface CandleFlameSmokeProps {
   /** X coordinate of candle flame base on 1080x1920 canvas (default: ~139px) */
@@ -158,7 +159,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
           pointerEvents: 'none',
         }}
       />
-
       {/* 2. Concentrated Near-Field Flame Core Glow */}
       <div
         style={{
@@ -174,7 +174,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
           pointerEvents: 'none',
         }}
       />
-
       {/* 3. Wispy Smoke Tendril / Ribbon */}
       {showSmoke && (
         <svg
@@ -206,7 +205,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
           />
         </svg>
       )}
-
       {/* 4. Organic Volumetric Smoke Puffs */}
       {showSmoke && (
         <div
@@ -222,7 +220,7 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
 
             const easeY = 1 - Math.pow(1 - progress, 1.4);
             const currentY = smokeOriginY - easeY * (520 * scale);
-            
+
             const driftProgress = Math.sin(progress * Math.PI * 1.5 + p.wobblePhase);
             const currentX =
               smokeOriginX +
@@ -250,8 +248,8 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
                 ? SMOKE_PUFF_DARK
                 : SMOKE_PUFF_LIGHT
               : isDarkTheme
-              ? SMOKE_PUFF_COOL_DARK
-              : SMOKE_PUFF_COOL_LIGHT;
+                ? SMOKE_PUFF_COOL_DARK
+                : SMOKE_PUFF_COOL_LIGHT;
 
             const rotation = frame * p.rotateSpeed + p.id * 30;
 
@@ -275,7 +273,6 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
           })}
         </div>
       )}
-
       {/* 5. Animated Procedural Candle Flame (Pre-rendered single image for maximum speed) */}
       {showFlame && (
         <div
@@ -295,11 +292,12 @@ export const CandleFlameSmoke: React.FC<CandleFlameSmokeProps> = ({
             style={{
               width: '100%',
               height: '100%',
-            }}
-          />
+              translate: "4px 73.1px",
+              scale: "0.878 0.97",
+              rotate: "-4.9deg"
+            }} />
         </div>
       )}
-
       {/* 6. Rising Fiery Sparks / Floating Glowing Embers */}
       {showSparks && (
         <div
