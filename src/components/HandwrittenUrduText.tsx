@@ -25,6 +25,11 @@ interface HandwrittenUrduTextProps {
   qalamScale?: number;
   fontFamily?: string;
   showPenAnimation?: boolean;
+  urduTextColor?: string;
+  hookTextColor?: string;
+  inkShadow?: string;
+  hookShadow?: string;
+  dividerColor?: string;
 }
 
 export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
@@ -46,20 +51,25 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   qalamScale = 6,
   fontFamily = "'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif",
   showPenAnimation = true,
+  urduTextColor: customUrduTextColor,
+  hookTextColor: customHookTextColor,
+  inkShadow: customInkShadow,
+  hookShadow: customHookShadow,
+  dividerColor,
 }) => {
   const frame = useCurrentFrame();
 
   const isDark = paper?.isDark ?? false;
-  const urduTextColor = paper?.textColor ?? (isDark ? '#faeed5' : '#140c06');
-  const hookTextColor = isDark ? '#ffd97d' : '#522004';
-  const goldAccent = isDark ? '#dfb76c' : '#8d6224';
+  const urduTextColor = customUrduTextColor ?? paper?.textColor ?? (isDark ? '#faeed5' : '#140c06');
+  const hookTextColor = customHookTextColor ?? (isDark ? '#ffd97d' : '#522004');
+  const goldAccent = dividerColor ?? (isDark ? '#dfb76c' : '#8d6224');
 
-  const inkShadow = isDark
+  const inkShadow = customInkShadow ?? (isDark
     ? '0 0 12px rgba(223, 183, 108, 0.25)'
-    : '0 2px 5px rgba(35, 20, 10, 0.18)';
-  const hookShadow = isDark
+    : '0 2px 5px rgba(35, 20, 10, 0.18)');
+  const hookShadow = customHookShadow ?? (isDark
     ? '0 0 16px rgba(255, 217, 125, 0.35)'
-    : '0 2px 6px rgba(82, 32, 4, 0.22)';
+    : '0 2px 6px rgba(82, 32, 4, 0.22)');
 
   const activeQalam = qalam ?? resolveQalamConfig();
 
@@ -95,8 +105,8 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     fontSize = 50;
     lineSpacing = 138;
   } else if (totalLines >= 3) {
-    fontSize = 56;
-    lineSpacing = 158;
+    fontSize = 47;
+    lineSpacing = 138;
   } else {
     fontSize = 62;
     lineSpacing = 180;
@@ -120,16 +130,16 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   // Smooth center-to-top glide animation offset for Hook lines (stays centered if only Hook is rendered)
   const hookShiftY = shouldShift && shiftEndFrame > shiftStartFrame
     ? interpolate(
-        frame,
-        [shiftStartFrame, shiftEndFrame],
-        [centerOffsetY, 0],
-        {
-          extrapolateLeft: 'clamp',
-          extrapolateRight: 'clamp',
-          easing: (t) =>
-            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
-        }
-      )
+      frame,
+      [shiftStartFrame, shiftEndFrame],
+      [centerOffsetY, 0],
+      {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: (t) =>
+          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // easeInOutCubic
+      }
+    )
     : centerOffsetY;
 
   // 1. Calculate Hook Lines
@@ -254,9 +264,9 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     : hookEndFrame - 5;
   const dividerOpacity = showDivider
     ? interpolate(frame, [dividerAppearStart, dividerAppearStart + 15], [0, 0.85], {
-        extrapolateLeft: 'clamp',
-        extrapolateRight: 'clamp',
-      })
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    })
     : 0;
 
   return (

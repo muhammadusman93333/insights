@@ -10,6 +10,10 @@ interface NatureHeaderProps {
   shiftEndFrame?: number;
   shouldShift?: boolean;
   centerOffsetY?: number;
+  titleTextColor?: string;
+  titleTextShadow?: string;
+  badgeBgColor?: string;
+  badgeBorderColor?: string;
 }
 
 export const NatureHeader: React.FC<NatureHeaderProps> = ({
@@ -21,6 +25,10 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
   shiftEndFrame = 0,
   shouldShift = false,
   centerOffsetY = 520,
+  titleTextColor,
+  titleTextShadow,
+  badgeBgColor,
+  badgeBorderColor,
 }) => {
   const frame = useCurrentFrame();
 
@@ -67,26 +75,26 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
           gap: 20,
           padding: '14px 44px',
           borderRadius: 40,
-          background: 'rgba(11, 26, 16, 0.85)',
-          border: `2px solid ${accentColor}`,
+          background: badgeBgColor ?? 'rgba(11, 26, 16, 0.85)',
+          border: `2px solid ${badgeBorderColor ?? accentColor}`,
           boxShadow: '0 8px 24px rgba(0,0,0,0.5), inset 0 0 15px rgba(223,183,108,0.15)',
         }}
       >
-        <span style={{ color: accentColor, fontSize: 24 }}>✦</span>
+        <span style={{ color: badgeBorderColor ?? accentColor, fontSize: 24 }}>✦</span>
         <span
           style={{
             fontSize: 52,
             fontWeight: 'bold',
-            color: '#fffbf0',
+            color: titleTextColor ?? '#fffbf0',
             direction: 'rtl',
             fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
             letterSpacing: 1,
-            textShadow: '0 2px 8px rgba(0,0,0,0.7)',
+            textShadow: titleTextShadow ?? '0 2px 8px rgba(0,0,0,0.7)',
           }}
         >
           {title}
         </span>
-        <span style={{ color: accentColor, fontSize: 24 }}>✦</span>
+        <span style={{ color: badgeBorderColor ?? accentColor, fontSize: 24 }}>✦</span>
       </div>
 
       {/* Decorative Gold & Nature Line */}

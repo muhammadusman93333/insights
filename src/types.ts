@@ -84,6 +84,22 @@ export const urduInsightSchema = z.object({
   penScratchSound: z.boolean().optional().default(true),
   penSoundSrc: z.string().optional().default('audio/qalam_sound.mp3'),
   readingPauseSeconds: z.number().optional().default(4.5),
+  // Styling overrides for background/text visibility
+  urduTextColor: z.string().optional(),
+  hookTextColor: z.string().optional(),
+  inkShadow: z.string().optional(),
+  hookShadow: z.string().optional(),
+  dividerColor: z.string().optional(),
+  titleTextColor: z.string().optional(),
+  titleTextShadow: z.string().optional(),
+  headerBadgeBgColor: z.string().optional(),
+  headerBadgeBorderColor: z.string().optional(),
+  footerTextColor: z.string().optional(),
+  footerTextShadow: z.string().optional(),
+  footerBadgeBgColor: z.string().optional(),
+  footerBadgeBorderColor: z.string().optional(),
+  glassCardBg: z.string().optional(),
+  glassCardBorder: z.string().optional(),
 });
 
 export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;

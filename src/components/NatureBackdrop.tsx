@@ -95,7 +95,8 @@ export const NatureBackdrop: React.FC<NatureBackdropProps> = ({
             height: '100%',
             objectFit: 'cover',
             objectPosition: 'center',
-          }} />
+          }}
+          from={-53} />
       </div>
       {/* 2. Primary Color Harmonizing Wash & Gradient Tint */}
       <div

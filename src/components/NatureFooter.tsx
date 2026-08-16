@@ -7,6 +7,10 @@ interface NatureFooterProps {
   accentColor?: string;
   primaryColor?: string;
   fontFamily?: string;
+  footerTextColor?: string;
+  footerTextShadow?: string;
+  badgeBgColor?: string;
+  badgeBorderColor?: string;
 }
 
 export const NatureFooter: React.FC<NatureFooterProps> = ({
@@ -15,6 +19,10 @@ export const NatureFooter: React.FC<NatureFooterProps> = ({
   accentColor = '#dfb76c',
   primaryColor = '#2d4a22',
   fontFamily = "'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif",
+  footerTextColor,
+  footerTextShadow,
+  badgeBgColor,
+  badgeBorderColor,
 }) => {
   const frame = useCurrentFrame();
 
@@ -62,24 +70,25 @@ export const NatureFooter: React.FC<NatureFooterProps> = ({
           gap: 14,
           padding: '10px 32px',
           borderRadius: 30,
-          background: 'rgba(10, 24, 14, 0.88)',
-          border: `1.5px solid ${accentColor}`,
+          background: badgeBgColor ?? 'rgba(10, 24, 14, 0.88)',
+          border: `1.5px solid ${badgeBorderColor ?? accentColor}`,
           boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
         }}
       >
-        <span style={{ color: accentColor, fontSize: 18 }}>✦</span>
+        <span style={{ color: badgeBorderColor ?? accentColor, fontSize: 18 }}>✦</span>
         <span
           style={{
             fontSize: 34,
-            color: '#faeed5',
+            color: footerTextColor ?? '#faeed5',
             direction: 'rtl',
             fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
             fontWeight: 600,
+            textShadow: footerTextShadow,
           }}
         >
           {authorOrSource}
         </span>
-        <span style={{ color: accentColor, fontSize: 18 }}>✦</span>
+        <span style={{ color: badgeBorderColor ?? accentColor, fontSize: 18 }}>✦</span>
       </div>
     </div>
   );

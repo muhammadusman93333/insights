@@ -3,6 +3,7 @@ import { getRandomPaperId } from './paperSelector';
 import { getRandomQalamId } from './qalamSelector';
 import { getRandomUrduFont } from './fontSelector';
 import { getRandomAudioTrack } from './audioSelector';
+import { getRandomNatureConfig, resolveNatureConfig } from './natureSelector';
 
 /**
  * Resolves any 'random' or unassigned visual/audio assets into a single
@@ -32,5 +33,53 @@ export function resolveConcretePayload(payload: UrduInsightPayload): UrduInsight
     resolved.bgMusic = getRandomAudioTrack() as any;
   }
 
+  // 5. Select a random nature background or resolve styled overrides for the nature background
+  const isNatureTemplate = resolved.template === 'nature' || resolved.template === 'QuranNatureShort';
+  const hasDefaultOrEmptyBg = !resolved.backgroundImage ||
+    resolved.backgroundImage === 'nature/nature_sample.jpg' ||
+    resolved.backgroundImage === 'random';
+
+  if (isNatureTemplate) {
+    let natureConfig = null;
+    if (hasDefaultOrEmptyBg) {
+      natureConfig = getRandomNatureConfig();
+    } else {
+      natureConfig = resolveNatureConfig(resolved.backgroundImage);
+    }
+
+    if (natureConfig) {
+      resolved.backgroundImage = natureConfig.backgroundImage;
+
+      // Apply tuned primary/accent colors and overlay opacity if defaults are active
+      if (!resolved.primaryColor || resolved.primaryColor === '#2d4a22') {
+        resolved.primaryColor = natureConfig.primaryColor;
+      }
+      if (!resolved.accentColor || resolved.accentColor === '#dfb76c' || resolved.accentColor === '#1fdceaff') {
+        resolved.accentColor = natureConfig.accentColor;
+      }
+      if (resolved.overlayOpacity === undefined || resolved.overlayOpacity === 0.42) {
+        resolved.overlayOpacity = natureConfig.overlayOpacity;
+      }
+
+      // Inject text visibility overrides if not explicitly specified by incoming payload
+      resolved.urduTextColor = resolved.urduTextColor || natureConfig.urduTextColor;
+      resolved.hookTextColor = resolved.hookTextColor || natureConfig.hookTextColor;
+      resolved.inkShadow = resolved.inkShadow || natureConfig.inkShadow;
+      resolved.hookShadow = resolved.hookShadow || natureConfig.hookShadow;
+      resolved.dividerColor = resolved.dividerColor || natureConfig.dividerColor;
+      resolved.titleTextColor = resolved.titleTextColor || natureConfig.titleTextColor;
+      resolved.titleTextShadow = resolved.titleTextShadow || natureConfig.titleTextShadow;
+      resolved.headerBadgeBgColor = resolved.headerBadgeBgColor || natureConfig.headerBadgeBgColor;
+      resolved.headerBadgeBorderColor = resolved.headerBadgeBorderColor || natureConfig.headerBadgeBorderColor;
+      resolved.footerTextColor = resolved.footerTextColor || natureConfig.footerTextColor;
+      resolved.footerTextShadow = resolved.footerTextShadow || natureConfig.footerTextShadow;
+      resolved.footerBadgeBgColor = resolved.footerBadgeBgColor || natureConfig.footerBadgeBgColor;
+      resolved.footerBadgeBorderColor = resolved.footerBadgeBorderColor || natureConfig.footerBadgeBorderColor;
+      resolved.glassCardBg = resolved.glassCardBg || natureConfig.glassCardBg;
+      resolved.glassCardBorder = resolved.glassCardBorder || natureConfig.glassCardBorder;
+    }
+  }
+
   return resolved;
 }
+

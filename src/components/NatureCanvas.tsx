@@ -5,6 +5,8 @@ interface NatureCanvasProps {
   primaryColor?: string;
   accentColor?: string;
   showGlassCard?: boolean;
+  glassCardBg?: string;
+  glassCardBorder?: string;
   children: React.ReactNode;
 }
 
@@ -12,6 +14,8 @@ export const NatureCanvas: React.FC<NatureCanvasProps> = ({
   primaryColor = '#2d4a22',
   accentColor = '#dfb76c',
   showGlassCard = true,
+  glassCardBg,
+  glassCardBorder,
   children,
 }) => {
   const frame = useCurrentFrame();
@@ -44,8 +48,8 @@ export const NatureCanvas: React.FC<NatureCanvasProps> = ({
             width: 970,
             height: 1780,
             borderRadius: 24,
-            backgroundColor: 'rgba(10, 24, 14, 0.45)',
-            border: `1.5px solid rgba(223, 183, 108, ${glowPulse * 0.5})`,
+            backgroundColor: glassCardBg ?? 'rgba(10, 24, 14, 0.45)',
+            border: glassCardBorder ?? `1.5px solid rgba(223, 183, 108, ${glowPulse * 0.5})`,
             boxShadow: `
               0 20px 50px rgba(0, 0, 0, 0.5),
               inset 0 0 60px rgba(0, 0, 0, 0.4),
