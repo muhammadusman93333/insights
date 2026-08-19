@@ -97,17 +97,22 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
     glassCardBorder,
   } = resolvedProps;
 
-  const timing = calculateVideoTiming(props);
+  // Resolve dynamic calligraphy font
+  const selectedFont = useMemo(() => {
+    return resolveUrduFont(fontFamily);
+  }, [fontFamily]);
+
+  const timing = useMemo(() => {
+    return calculateVideoTiming({
+      ...resolvedProps,
+      fontFamily: selectedFont,
+    });
+  }, [resolvedProps, selectedFont]);
 
   // Resolve Qalam calligraphy pen
   const activeQalam = useMemo(() => {
     return resolveQalamConfig(qalam);
   }, [qalam]);
-
-  // Resolve dynamic calligraphy font
-  const selectedFont = useMemo(() => {
-    return resolveUrduFont(fontFamily);
-  }, [fontFamily]);
 
   // Resolve dynamic background soundtrack
   const resolvedBgMusic = useMemo(() => {

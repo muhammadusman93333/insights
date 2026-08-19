@@ -30,8 +30,6 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
     penSoundSrc = 'audio/qalam_sound.mp3',
   } = props;
 
-  const timing = calculateVideoTiming(props);
-
   // Resolve background paper texture (1-8 or random)
   const paper = useMemo(() => {
     return resolvePaperConfig(bgTheme);
@@ -46,6 +44,13 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
   const selectedFont = useMemo(() => {
     return resolveUrduFont(fontFamily);
   }, [fontFamily]);
+
+  const timing = useMemo(() => {
+    return calculateVideoTiming({
+      ...props,
+      fontFamily: selectedFont,
+    });
+  }, [props, selectedFont]);
 
   // Resolve dynamic background soundtrack (1-8 or random)
   const resolvedBgMusic = useMemo(() => {

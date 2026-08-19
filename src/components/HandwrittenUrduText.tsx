@@ -88,6 +88,10 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   const containerWidth = 970;
   const containerLeft = (1080 - containerWidth) / 2; // 55px (safe inside 47px inner gold border)
 
+  const isHookOnly = hasHook && actualBodyLines.length === 0;
+  const isKasheeda = fontFamily?.includes('Kasheeda') && isHookOnly;
+  const widthMultiplier = isKasheeda ? 0.65 : 0.46;
+
   // Enhanced dynamic typography sizing with increased font size and comfortable line spacing
   let fontSize = 58;
   let lineSpacing = 168;
@@ -162,7 +166,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
 
     const estLineWidth = Math.min(
       containerWidth,
-      Math.max(220, line.trim().length * (fontSize * 0.46))
+      Math.max(220, line.trim().length * (fontSize * widthMultiplier))
     );
 
     // Centered alignment with 6px right-side writing margin
@@ -223,7 +227,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
 
     const estLineWidth = Math.min(
       containerWidth,
-      Math.max(220, line.trim().length * (fontSize * 0.46))
+      Math.max(220, line.trim().length * (fontSize * widthMultiplier))
     );
 
     // Centered alignment with 6px right-side writing margin

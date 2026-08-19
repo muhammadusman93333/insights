@@ -24,7 +24,7 @@ export interface TimingPlan {
 /**
  * Splits Urdu text into balanced, visually appealing lines to fit strictly on ONE single page
  */
-export function splitUrduIntoLines(text: string): string[] {
+export function splitUrduIntoLines(text: string, fontFamily?: string): string[] {
   const trimmed = text.trim();
   if (!trimmed) return [];
 
@@ -39,18 +39,22 @@ export function splitUrduIntoLines(text: string): string[] {
   const charCount = trimmed.length;
   // Dynamically set chars per line so each line utilizes available horizontal width
   let maxCharsPerLine = 48;
+  
+  // Adjust characters per line limits for Kasheeda font since it stretches characters horizontally
+  const isKasheeda = fontFamily === 'Jameel Noori Nastaleeq Kasheeda';
+  const limitScale = isKasheeda ? 0.75 : 1.0;
+
   if (charCount > 240) {
-    maxCharsPerLine = 56;
+    maxCharsPerLine = Math.round(56 * limitScale);
   } else if (charCount > 130) {
-    maxCharsPerLine = 50;
+    maxCharsPerLine = Math.round(50 * limitScale);
   } else if (charCount > 70) {
-    maxCharsPerLine = 42;
+    maxCharsPerLine = Math.round(42 * limitScale);
   } else if (charCount < 40) {
-    maxCharsPerLine = 30;
+    maxCharsPerLine = Math.round(30 * limitScale);
+  } else {
+    maxCharsPerLine = Math.round(48 * limitScale);
   }
-
-
-
 
   const words = trimmed.split(/\s+/);
   const lines: string[] = [];
@@ -84,13 +88,18 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     bodyText = '',
     urduText = '',
     readingPauseSeconds = 4.5,
+    fontFamily,
   } = payload;
 
   const rawHook = hook.trim();
   const rawBody = (body || bodyText || urduText).trim();
 
-  const hookLines = rawHook ? splitUrduIntoLines(rawHook) : [];
-  const bodyLines = rawBody ? splitUrduIntoLines(rawBody) : [];
+  // Apply Kasheeda-specific wrapping adjustments only for hook-only videos
+  const isHookOnly = rawHook.length > 0 && rawBody.length === 0;
+  const hookFont = isHookOnly ? fontFamily : undefined;
+
+  const hookLines = rawHook ? splitUrduIntoLines(rawHook, hookFont) : [];
+  const bodyLines = rawBody ? splitUrduIntoLines(rawBody, undefined) : [];
 
   const headerStartFrame = 5;
   const headerEndFrame = 35;
