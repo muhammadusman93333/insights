@@ -82,12 +82,15 @@ on:
         description: 'Webhook URL to notify upon completion'
         required: false
         type: string
-        default: 'https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy'
       upload_url:
         description: 'Server upload endpoint'
         required: false
         type: string
         default: 'https://uvisionpk.com/insights/upload_video.php'
+      upload_api_token:
+        description: 'Authorization Bearer Token for uploading'
+        required: false
+        type: string
 
   repository_dispatch:
     types: [render-video, render_video, make_webhook]
@@ -126,8 +129,10 @@ jobs:
           INPUT_PAYLOAD_JSON: ${{ github.event.inputs.payload_json }}
           INPUT_WEBHOOK_URL: ${{ github.event.inputs.webhook_url }}
           INPUT_UPLOAD_URL: ${{ github.event.inputs.upload_url }}
-          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy' }}
+          INPUT_UPLOAD_API_TOKEN: ${{ github.event.inputs.upload_api_token }}
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL || github.event.inputs.webhook_url }}
           UPLOAD_URL: ${{ secrets.UPLOAD_URL || 'https://uvisionpk.com/insights/upload_video.php' }}
+          UPLOAD_API_TOKEN: ${{ secrets.UPLOAD_API_TOKEN || github.event.inputs.upload_api_token }}
         run: npm run render:publish
 
       - name: 💾 Backup Rendered Artifacts (Optional)

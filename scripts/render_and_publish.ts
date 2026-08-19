@@ -18,11 +18,12 @@ interface ActionInputs {
   payload_json?: string;
   webhook_url?: string;
   upload_url?: string;
+  upload_api_token?: string;
   [key: string]: any;
 }
 
 const DEFAULT_UPLOAD_URL = 'https://uvisionpk.com/insights/upload_video.php';
-const DEFAULT_WEBHOOK_URL = 'https://hook.eu1.make.com/husiuaa0llb1tpdgpd142jgkbxypn5gy';
+const DEFAULT_WEBHOOK_URL = '';
 
 /**
  * Extracts inputs from GitHub Actions environment, CLI flags, or event payload
@@ -31,6 +32,7 @@ function getInputs(): {
   payload: UrduInsightPayload;
   uploadUrl: string;
   webhookUrl: string;
+  uploadApiToken: string;
   passthrough: Record<string, any>;
 } {
   let rawInputs: ActionInputs = {};
@@ -70,6 +72,7 @@ function getInputs(): {
     'payload_json',
     'webhook_url',
     'upload_url',
+    'upload_api_token',
   ];
 
   for (const key of envKeys) {
@@ -99,6 +102,9 @@ function getInputs(): {
     } else if (args[i] === '--upload-url' && args[i + 1]) {
       rawInputs.upload_url = args[i + 1];
       i++;
+    } else if (args[i] === '--upload-api-token' && args[i + 1]) {
+      rawInputs.upload_api_token = args[i + 1];
+      i++;
     }
   }
 
@@ -117,7 +123,8 @@ function getInputs(): {
   }
 
   const uploadUrl = rawInputs.upload_url || process.env.UPLOAD_URL || DEFAULT_UPLOAD_URL;
-  const webhookUrl = rawInputs.webhook_url || process.env.MAKE_WEBHOOK_URL || DEFAULT_WEBHOOK_URL;
+  const webhookUrl = rawInputs.webhook_url || process.env.MAKE_WEBHOOK_URL || '';
+  const uploadApiToken = rawInputs.upload_api_token || process.env.UPLOAD_API_TOKEN || '';
 
   // Build the final UrduInsightPayload
   const payload: UrduInsightPayload = {
@@ -137,6 +144,7 @@ function getInputs(): {
     payload,
     uploadUrl,
     webhookUrl,
+    uploadApiToken,
     passthrough,
   };
 }
@@ -148,6 +156,7 @@ function getInputs(): {
 async function uploadMultipartFile(
   filePath: string,
   uploadUrl: string,
+  uploadApiToken: string,
   fieldName: 'video' | 'image',
   mimeType: string,
   retries = 3
@@ -175,17 +184,23 @@ async function uploadMultipartFile(
       console.log(`📁 File: ${filePath} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
 
       const responseText = await new Promise<string>((resolve, reject) => {
+        const reqHeaders: Record<string, string | number> = {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': fullBody.length,
+          'User-Agent': 'RemotionVideoPipeline/1.0',
+        };
+
+        if (uploadApiToken) {
+          reqHeaders['Authorization'] = `Bearer ${uploadApiToken}`;
+        }
+
         const req = transport.request(
           {
             hostname: parsedUrl.hostname,
             port: parsedUrl.port || (isHttps ? 443 : 80),
             path: parsedUrl.pathname + parsedUrl.search,
             method: 'POST',
-            headers: {
-              'Content-Type': `multipart/form-data; boundary=${boundary}`,
-              'Content-Length': fullBody.length,
-              'User-Agent': 'RemotionVideoPipeline/1.0',
-            },
+            headers: reqHeaders,
             timeout: 600000, // 10 minutes timeout
           },
           (res) => {
@@ -251,15 +266,15 @@ async function uploadMultipartFile(
 /**
  * Uploads a video file to the specified PHP endpoint
  */
-async function uploadVideo(filePath: string, uploadUrl: string): Promise<any> {
-  return uploadMultipartFile(filePath, uploadUrl, 'video', 'video/mp4');
+async function uploadVideo(filePath: string, uploadUrl: string, uploadApiToken: string): Promise<any> {
+  return uploadMultipartFile(filePath, uploadUrl, uploadApiToken, 'video', 'video/mp4');
 }
 
 /**
  * Uploads an image / thumbnail file to the specified PHP endpoint
  */
-async function uploadThumbnail(filePath: string, uploadUrl: string): Promise<any> {
-  return uploadMultipartFile(filePath, uploadUrl, 'image', 'image/png');
+async function uploadThumbnail(filePath: string, uploadUrl: string, uploadApiToken: string): Promise<any> {
+  return uploadMultipartFile(filePath, uploadUrl, uploadApiToken, 'image', 'image/png');
 }
 
 /**
@@ -303,7 +318,7 @@ function appendStepSummary(markdown: string) {
 }
 
 async function main() {
-  const { payload, uploadUrl, webhookUrl, passthrough } = getInputs();
+  const { payload, uploadUrl, webhookUrl, uploadApiToken, passthrough } = getInputs();
 
   console.log('====================================================');
   console.log(' 🕌 Qalam & Dawaat - GitHub Action Pipeline');
@@ -338,7 +353,7 @@ async function main() {
 
     // 2. Upload Video
     console.log('\n📤 Step 2/4: Uploading video to live server...');
-    const uploadVideoResult = await uploadVideo(outputPath, uploadUrl);
+    const uploadVideoResult = await uploadVideo(outputPath, uploadUrl, uploadApiToken);
 
     const videoUrl =
       uploadVideoResult.data?.url ||
@@ -353,7 +368,7 @@ async function main() {
     if (renderResult.screenshotPath && fs.existsSync(renderResult.screenshotPath)) {
       console.log('\n📸 Step 3/4: Uploading thumbnail image to live server...');
       try {
-        const uploadThumbResult = await uploadThumbnail(renderResult.screenshotPath, uploadUrl);
+        const uploadThumbResult = await uploadThumbnail(renderResult.screenshotPath, uploadUrl, uploadApiToken);
         thumbData = uploadThumbResult.data;
         thumbnailUrl =
           uploadThumbResult.data?.url ||
