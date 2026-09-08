@@ -121,7 +121,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     let hookWritingFrames = 0;
     for (const line of hookLines) {
       const lineLength = line.trim().length;
-      const framesForLine = Math.max(40, Math.min(85, Math.round(lineLength * 1.9)));
+      const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
       hookWritingFrames += framesForLine + 6;
     }
     hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
@@ -137,7 +137,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     let bodyWritingFrames = 0;
     for (const line of bodyLines) {
       const lineLength = line.trim().length;
-      const framesForLine = Math.max(40, Math.min(85, Math.round(lineLength * 1.9)));
+      const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
       bodyWritingFrames += framesForLine + 6;
     }
     bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
@@ -148,7 +148,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     let hookWritingFrames = 0;
     for (const line of hookLines) {
       const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.min(90, Math.round(lineLength * 2.0)));
+      const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
       hookWritingFrames += framesForLine + 6;
     }
     hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
@@ -168,7 +168,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     let bodyWritingFrames = 0;
     for (const line of bodyLines) {
       const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.min(90, Math.round(lineLength * 2.0)));
+      const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
       bodyWritingFrames += framesForLine + 6;
     }
     bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);

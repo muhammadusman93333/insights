@@ -146,15 +146,25 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     )
     : centerOffsetY;
 
-  // 1. Calculate Hook Lines
+  // 1. Calculate Hook Lines timing synchronized with voiceover
   const totalHookFrames = Math.max(1, hookEndFrame - hookStartFrame);
-  const framesPerHookLine = actualHookLines.length > 0
-    ? Math.max(30, Math.floor(totalHookFrames / actualHookLines.length))
-    : 60;
+  const totalHookChars = actualHookLines.reduce((sum, l) => sum + Math.max(1, l.trim().length), 0) || 1;
 
+  // Initial vocal delay (~7-8 frames) so pen starts writing right as speech phonation begins
+  const hookSpeechOffset = actualHookLines.length > 0 ? Math.min(8, Math.floor(totalHookFrames * 0.06)) : 0;
+  const availableHookFrames = Math.max(actualHookLines.length * 28, totalHookFrames - hookSpeechOffset);
+
+  let currentHookFrame = hookStartFrame + hookSpeechOffset;
   const renderedHookLines = actualHookLines.map((line, index) => {
-    const lineStart = hookStartFrame + index * framesPerHookLine;
-    const lineEnd = lineStart + Math.floor(framesPerHookLine * 0.88);
+    const lineChars = Math.max(1, line.trim().length);
+    const lineWeight = lineChars / totalHookChars;
+    // Allocate writing duration proportionally to this line's spoken character count
+    const allocatedFrames = Math.max(28, Math.round(availableHookFrames * lineWeight));
+    
+    const lineStart = currentHookFrame;
+    // Pen stays active for 96% of line time, preventing pen from rushing ahead and freezing
+    const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
+    currentHookFrame = lineStart + allocatedFrames;
 
     const progress = interpolate(frame, [lineStart, lineEnd], [0, 1], {
       extrapolateLeft: 'clamp',
@@ -198,7 +208,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     };
   });
 
-  // 2. Calculate Body Lines
+  // 2. Calculate Body Lines timing synchronized with voiceover
   const bodyEffectiveStart = (actualHookLines.length === 0 && urduStartFrame !== undefined)
     ? urduStartFrame
     : bodyStartFrame;
@@ -207,15 +217,23 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     : bodyEndFrame;
 
   const totalBodyFrames = Math.max(1, bodyEffectiveEnd - bodyEffectiveStart);
-  const framesPerBodyLine = actualBodyLines.length > 0
-    ? Math.max(30, Math.floor(totalBodyFrames / actualBodyLines.length))
-    : 60;
+  const totalBodyChars = actualBodyLines.reduce((sum, l) => sum + Math.max(1, l.trim().length), 0) || 1;
+
+  const bodySpeechOffset = actualBodyLines.length > 0 ? Math.min(8, Math.floor(totalBodyFrames * 0.05)) : 0;
+  const availableBodyFrames = Math.max(actualBodyLines.length * 28, totalBodyFrames - bodySpeechOffset);
 
   const bodyBaseY = startTop + actualHookLines.length * lineSpacing + sectionGap;
 
+  let currentBodyFrame = bodyEffectiveStart + bodySpeechOffset;
   const renderedBodyLines = actualBodyLines.map((line, index) => {
-    const lineStart = bodyEffectiveStart + index * framesPerBodyLine;
-    const lineEnd = lineStart + Math.floor(framesPerBodyLine * 0.88);
+    const lineChars = Math.max(1, line.trim().length);
+    const lineWeight = lineChars / totalBodyChars;
+    // Allocate writing duration proportionally to this line's spoken character count
+    const allocatedFrames = Math.max(28, Math.round(availableBodyFrames * lineWeight));
+
+    const lineStart = currentBodyFrame;
+    const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
+    currentBodyFrame = lineStart + allocatedFrames;
 
     const progress = interpolate(frame, [lineStart, lineEnd], [0, 1], {
       extrapolateLeft: 'clamp',
@@ -251,7 +269,6 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
       activePenX = xPos;
       activePenY = lineY + Math.round(fontSize * 0.9) + yWave;
     }
-
 
     return {
       text: line,
