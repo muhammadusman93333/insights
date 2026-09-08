@@ -105,7 +105,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
   const timing = useMemo(() => {
     return calculateVideoTiming({
       ...resolvedProps,
-      fontFamily: selectedFont,
+      fontFamily: selectedFont as any,
     });
   }, [resolvedProps, selectedFont]);
 
@@ -253,12 +253,20 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
           />
         )}
       </NatureCanvas>
-      {/* 5. Ambient Background Audio + Qalam Writing Sound FX */}
+      {/* 5. Ambient Background Audio + Qalam Writing Sound FX + Prominent Voiceover */}
       <AudioLayer
         bgMusic={resolvedBgMusic}
+        bgMusicVolume={props.bgMusicVolume}
         penScratchSound={penScratchSound}
         penSoundSrc={penSoundSrc}
+        penVolume={props.penVolume}
         writingIntervals={writingIntervals}
+        hookAudioSrc={props.hookAudioSrc}
+        hookAudioStartFrame={timing.hookStartFrame}
+        bodyAudioSrc={props.bodyAudioSrc}
+        bodyAudioStartFrame={timing.bodyStartFrame}
+        voiceoverAudio={props.voiceoverAudio}
+        voiceoverVolume={props.voiceoverVolume}
       />
     </div>
   );

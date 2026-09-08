@@ -112,6 +112,9 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
   let bodyStartFrame = 0;
   let bodyEndFrame = 0;
 
+  const minHookFrames = payload.hookAudioDuration ? Math.ceil(payload.hookAudioDuration * FPS) + 12 : 0;
+  const minBodyFrames = payload.bodyAudioDuration ? Math.ceil(payload.bodyAudioDuration * FPS) + 12 : 0;
+
   if (hookLines.length > 0 && bodyLines.length > 0) {
     // 1. Hook begins in center after Title header
     hookStartFrame = headerEndFrame + 10;
@@ -121,6 +124,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
       const framesForLine = Math.max(40, Math.min(85, Math.round(lineLength * 1.9)));
       hookWritingFrames += framesForLine + 6;
     }
+    hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
     hookEndFrame = hookStartFrame + Math.max(60, hookWritingFrames);
 
     // 2. Smoothly shift Title + Hook from Center to Top
@@ -136,6 +140,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
       const framesForLine = Math.max(40, Math.min(85, Math.round(lineLength * 1.9)));
       bodyWritingFrames += framesForLine + 6;
     }
+    bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
     bodyEndFrame = bodyStartFrame + Math.max(70, bodyWritingFrames);
   } else if (hookLines.length > 0) {
     // Only hook is provided (stays centered)
@@ -146,6 +151,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
       const framesForLine = Math.max(45, Math.min(90, Math.round(lineLength * 2.0)));
       hookWritingFrames += framesForLine + 6;
     }
+    hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
     hookEndFrame = hookStartFrame + Math.max(80, hookWritingFrames);
     shiftStartFrame = hookEndFrame;
     shiftEndFrame = hookEndFrame;
@@ -165,6 +171,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
       const framesForLine = Math.max(45, Math.min(90, Math.round(lineLength * 2.0)));
       bodyWritingFrames += framesForLine + 6;
     }
+    bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
     bodyEndFrame = bodyStartFrame + Math.max(80, bodyWritingFrames);
     hookStartFrame = bodyStartFrame;
     hookEndFrame = bodyStartFrame;

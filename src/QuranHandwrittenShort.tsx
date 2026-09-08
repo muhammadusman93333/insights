@@ -48,7 +48,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
   const timing = useMemo(() => {
     return calculateVideoTiming({
       ...props,
-      fontFamily: selectedFont,
+      fontFamily: selectedFont as any,
     });
   }, [props, selectedFont]);
 
@@ -125,12 +125,20 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         fontFamily={selectedFont}
         showPenAnimation={showPenAnimation}
       />
-      {/* 5. Ambient Background Audio + Qalam Writing Sound FX */}
+      {/* 5. Ambient Background Audio + Qalam Writing Sound FX + Prominent Voiceover */}
       <AudioLayer
         bgMusic={resolvedBgMusic}
+        bgMusicVolume={props.bgMusicVolume}
         penScratchSound={penScratchSound}
         penSoundSrc={penSoundSrc}
+        penVolume={props.penVolume}
         writingIntervals={writingIntervals}
+        hookAudioSrc={props.hookAudioSrc}
+        hookAudioStartFrame={timing.hookStartFrame}
+        bodyAudioSrc={props.bodyAudioSrc}
+        bodyAudioStartFrame={timing.bodyStartFrame}
+        voiceoverAudio={props.voiceoverAudio}
+        voiceoverVolume={props.voiceoverVolume}
       />
       {/* 4. Subtle floating golden light motes / bokeh & dust particles */}
       <DustParticles count={34} isDarkTheme={paper.isDark} />

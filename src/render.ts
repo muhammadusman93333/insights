@@ -4,6 +4,7 @@ import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { defaultProps, resolveConcretePayload, UrduInsightPayload } from './types';
 import { calculateVideoTiming } from './utils/timing';
+import { generateUrduTts } from './utils/tts';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
@@ -72,6 +73,63 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   }
   console.log('----------------------------------------------------');
 
+  const publicTtsDir = path.resolve(process.cwd(), 'public', 'audio', 'tts');
+  if (!fs.existsSync(publicTtsDir)) {
+    fs.mkdirSync(publicTtsDir, { recursive: true });
+  }
+
+  // Synthesize human-like Urdu voiceover for Hook & Body (Title excluded)
+  const enableVoiceover = payload.enableVoiceover !== false;
+  const voice = payload.voiceoverVoice || 'ur-PK-AsadNeural';
+  const rate = payload.voiceoverRate || '-5%';
+  const pitch = payload.voiceoverPitch || '-1Hz';
+
+  const rawHook = typeof payload.hook === 'string' ? payload.hook.trim() : '';
+  const rawBody = typeof (payload.body || payload.bodyText || payload.urduText) === 'string'
+    ? (payload.body || payload.bodyText || payload.urduText).trim()
+    : '';
+
+  if (enableVoiceover) {
+    if (rawHook && !payload.hookAudioSrc) {
+      try {
+        console.log(`🎙️ Synthesizing Hook TTS: "${rawHook.substring(0, 45)}..."`);
+        const hookRes = await generateUrduTts({
+          text: rawHook,
+          voice,
+          rate,
+          pitch,
+          outputDir: publicTtsDir,
+        });
+        payload.hookAudioSrc = `audio/tts/${hookRes.filename}`;
+        payload.hookAudioDuration = hookRes.duration;
+      } catch (err: any) {
+        console.warn(`⚠️ Hook voiceover synthesis error:`, err.message);
+      }
+    }
+
+    if (rawBody && !payload.bodyAudioSrc) {
+      try {
+        console.log(`🎙️ Synthesizing Body TTS: "${rawBody.substring(0, 45)}..."`);
+        const bodyRes = await generateUrduTts({
+          text: rawBody,
+          voice,
+          rate,
+          pitch,
+          outputDir: publicTtsDir,
+        });
+        payload.bodyAudioSrc = `audio/tts/${bodyRes.filename}`;
+        payload.bodyAudioDuration = bodyRes.duration;
+      } catch (err: any) {
+        console.warn(`⚠️ Body voiceover synthesis error:`, err.message);
+      }
+    }
+
+    if (payload.hookAudioSrc || payload.bodyAudioSrc) {
+      payload.voiceoverVolume = payload.voiceoverVolume ?? 1.0;
+      payload.bgMusicVolume = payload.bgMusicVolume ?? 0.16;
+      payload.penVolume = payload.penVolume ?? 0.28;
+    }
+  }
 
   console.log('📦 Bundling Remotion composition...');
   const entryPoint = path.resolve(__dirname, 'index.ts');

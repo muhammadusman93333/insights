@@ -84,6 +84,19 @@ export const urduInsightSchema = z.object({
   penScratchSound: z.boolean().optional().default(true),
   penSoundSrc: z.string().optional().default('audio/qalam_sound.mp3'),
   readingPauseSeconds: z.number().optional().default(4.5),
+  // Voiceover TTS options
+  enableVoiceover: z.boolean().optional().default(true),
+  hookAudioSrc: z.string().optional(),
+  hookAudioDuration: z.number().optional(),
+  bodyAudioSrc: z.string().optional(),
+  bodyAudioDuration: z.number().optional(),
+  voiceoverAudio: z.string().optional(),
+  voiceoverVolume: z.number().min(0).max(2).optional().default(1.0),
+  bgMusicVolume: z.number().min(0).max(1).optional(),
+  penVolume: z.number().min(0).max(1).optional(),
+  voiceoverVoice: z.string().optional().default('ur-PK-AsadNeural'),
+  voiceoverRate: z.string().optional().default('-5%'),
+  voiceoverPitch: z.string().optional().default('-1Hz'),
   // Styling overrides for background/text visibility
   urduTextColor: z.string().optional(),
   hookTextColor: z.string().optional(),
@@ -127,6 +140,11 @@ export const defaultProps: UrduInsightPayload = {
   penScratchSound: true,
   penSoundSrc: 'audio/qalam_sound.mp3',
   readingPauseSeconds: 4.5,
+  enableVoiceover: true,
+  voiceoverVolume: 1.0,
+  voiceoverVoice: 'ur-PK-AsadNeural',
+  voiceoverRate: '-5%',
+  voiceoverPitch: '-1Hz',
 };
 
 export { resolveConcretePayload } from './utils/propsResolver';

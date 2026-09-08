@@ -9,6 +9,8 @@ out/
 .remotion/
 dist/
 build/
+public/audio/tts/*.mp3
+test_*.mp3
 
 # Environment files
 .env
