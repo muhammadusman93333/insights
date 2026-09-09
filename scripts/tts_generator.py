@@ -74,29 +74,62 @@ async def generate_tts(text: str, output_path: str, voice: str = "ur-PK-AsadNeur
         voice=voice,
         rate=rate,
         pitch=pitch,
-        volume=volume
+        volume=volume,
+        boundary="WordBoundary",
     )
 
-    await communicate.save(output_abs)
-    
-    # Calculate duration (Edge-TTS generates 48kHz / 32kbps - 48kbps mono MP3, avg 6KB/sec)
-    duration = 0.0
+    captions = []
+    submaker = edge_tts.SubMaker()
+
+    with open(output_abs, "wb") as f:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                f.write(chunk["data"])
+            elif chunk["type"] == "WordBoundary":
+                submaker.feed(chunk)
+                start_ms = round(chunk["offset"] / 10000)
+                dur_ms = round(chunk["duration"] / 10000)
+                end_ms = start_ms + dur_ms
+                captions.append({
+                    "text": chunk["text"],
+                    "startMs": start_ms,
+                    "endMs": end_ms,
+                    "timestampMs": None,
+                    "confidence": None,
+                })
+
+    srt_path = os.path.splitext(output_abs)[0] + ".srt"
     try:
-        size = os.path.getsize(output_abs)
-        duration = round(size / 6000.0, 2)
+        srt_content = submaker.get_srt()
+        if srt_content:
+            with open(srt_path, "w", encoding="utf-8") as f:
+                f.write(srt_content)
     except Exception:
         pass
+
+    # Exact audio duration from caption end timestamp + 300ms natural acoustic decay
+    if captions:
+        duration = round((captions[-1]["endMs"] + 300) / 1000.0, 2)
+    else:
+        duration = 0.0
+        try:
+            size = os.path.getsize(output_abs)
+            duration = round(size / 6000.0, 2)
+        except Exception:
+            pass
 
     return {
         "success": True,
         "outputPath": output_abs,
         "filename": os.path.basename(output_abs),
+        "srtPath": srt_path if os.path.exists(srt_path) else None,
         "processedText": cleaned_text,
         "voice": voice,
         "rate": rate,
         "pitch": pitch,
         "volume": volume,
         "duration": duration,
+        "captions": captions,
         "fileSizeBytes": os.path.getsize(output_abs) if os.path.exists(output_abs) else 0
     }
 

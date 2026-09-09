@@ -115,14 +115,24 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
   const minHookFrames = payload.hookAudioDuration ? Math.ceil(payload.hookAudioDuration * FPS) + 12 : 0;
   const minBodyFrames = payload.bodyAudioDuration ? Math.ceil(payload.bodyAudioDuration * FPS) + 12 : 0;
 
+  // Exact caption duration in frames (when Remotion captions are present)
+  const hookCaptionFrames = (payload.hookCaptions && payload.hookCaptions.length > 0)
+    ? Math.ceil((payload.hookCaptions[payload.hookCaptions.length - 1].endMs / 1000) * FPS) + 6
+    : 0;
+  const bodyCaptionFrames = (payload.bodyCaptions && payload.bodyCaptions.length > 0)
+    ? Math.ceil((payload.bodyCaptions[payload.bodyCaptions.length - 1].endMs / 1000) * FPS) + 8
+    : 0;
+
   if (hookLines.length > 0 && bodyLines.length > 0) {
     // 1. Hook begins in center after Title header
     hookStartFrame = headerEndFrame + 10;
-    let hookWritingFrames = 0;
-    for (const line of hookLines) {
-      const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
-      hookWritingFrames += framesForLine + 6;
+    let hookWritingFrames = hookCaptionFrames;
+    if (!hookWritingFrames) {
+      for (const line of hookLines) {
+        const lineLength = line.trim().length;
+        const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
+        hookWritingFrames += framesForLine + 6;
+      }
     }
     hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
     hookEndFrame = hookStartFrame + Math.max(60, hookWritingFrames);
@@ -134,22 +144,26 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
 
     // 3. Body text starts writing after reaching Top
     bodyStartFrame = shiftEndFrame + 10;
-    let bodyWritingFrames = 0;
-    for (const line of bodyLines) {
-      const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
-      bodyWritingFrames += framesForLine + 6;
+    let bodyWritingFrames = bodyCaptionFrames;
+    if (!bodyWritingFrames) {
+      for (const line of bodyLines) {
+        const lineLength = line.trim().length;
+        const framesForLine = Math.max(45, Math.round(lineLength * 2.4));
+        bodyWritingFrames += framesForLine + 6;
+      }
     }
     bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
     bodyEndFrame = bodyStartFrame + Math.max(70, bodyWritingFrames);
   } else if (hookLines.length > 0) {
     // Only hook is provided (stays centered)
     hookStartFrame = headerEndFrame + 10;
-    let hookWritingFrames = 0;
-    for (const line of hookLines) {
-      const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
-      hookWritingFrames += framesForLine + 6;
+    let hookWritingFrames = hookCaptionFrames;
+    if (!hookWritingFrames) {
+      for (const line of hookLines) {
+        const lineLength = line.trim().length;
+        const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
+        hookWritingFrames += framesForLine + 6;
+      }
     }
     hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
     hookEndFrame = hookStartFrame + Math.max(80, hookWritingFrames);
@@ -165,11 +179,13 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     shouldShift = true;
 
     bodyStartFrame = shiftEndFrame + 10;
-    let bodyWritingFrames = 0;
-    for (const line of bodyLines) {
-      const lineLength = line.trim().length;
-      const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
-      bodyWritingFrames += framesForLine + 6;
+    let bodyWritingFrames = bodyCaptionFrames;
+    if (!bodyWritingFrames) {
+      for (const line of bodyLines) {
+        const lineLength = line.trim().length;
+        const framesForLine = Math.max(45, Math.round(lineLength * 2.5));
+        bodyWritingFrames += framesForLine + 6;
+      }
     }
     bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
     bodyEndFrame = bodyStartFrame + Math.max(80, bodyWritingFrames);

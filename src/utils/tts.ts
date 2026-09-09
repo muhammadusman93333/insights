@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import type { Caption } from '@remotion/captions';
 
 export interface TtsOptions {
   text: string;
@@ -17,12 +18,14 @@ export interface TtsResult {
   success: boolean;
   outputPath: string;
   filename: string;
+  srtPath?: string | null;
   processedText: string;
   voice: string;
   rate: string;
   pitch: string;
   volume: string;
   duration: number;
+  captions?: Caption[];
   fileSizeBytes: number;
   error?: string;
 }

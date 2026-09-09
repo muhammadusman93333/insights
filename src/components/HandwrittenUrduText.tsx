@@ -1,8 +1,17 @@
 import React from 'react';
 import { interpolate, useCurrentFrame } from 'remotion';
+import type { Caption } from '@remotion/captions';
 import { PaperConfig } from '../utils/paperSelector';
 import { QalamConfig, resolveQalamConfig } from '../utils/qalamSelector';
 import { QalamNib } from './QalamNib';
+
+export type CaptionLike = {
+  text: string;
+  startMs: number;
+  endMs: number;
+  timestampMs?: number | null;
+  confidence?: number | null;
+};
 
 interface HandwrittenUrduTextProps {
   hookLines?: string[];
@@ -11,6 +20,9 @@ interface HandwrittenUrduTextProps {
   bodyLines?: string[];
   bodyStartFrame?: number;
   bodyEndFrame?: number;
+  // Remotion Captions synchronization
+  hookCaptions?: CaptionLike[];
+  bodyCaptions?: CaptionLike[];
   // Shift animation props
   shiftStartFrame?: number;
   shiftEndFrame?: number;
@@ -39,6 +51,8 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   bodyLines,
   bodyStartFrame = 135,
   bodyEndFrame = 300,
+  hookCaptions,
+  bodyCaptions,
   shiftStartFrame = 0,
   shiftEndFrame = 0,
   shouldShift = false,
@@ -146,65 +160,173 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     )
     : centerOffsetY;
 
+  // Helper: map sequential word captions to rendered lines
+  const groupCaptionsByLines = (lines: string[], captions?: CaptionLike[]): CaptionLike[][] => {
+    if (!captions || captions.length === 0 || lines.length === 0) {
+      return lines.map(() => []);
+    }
+    const result: CaptionLike[][] = [];
+    let captionIdx = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const wordsInLine = line.trim().split(/\s+/).filter(Boolean);
+      const lineCaptions: CaptionLike[] = [];
+
+      if (i === lines.length - 1) {
+        while (captionIdx < captions.length) {
+          lineCaptions.push(captions[captionIdx]);
+          captionIdx++;
+        }
+      } else {
+        for (let w = 0; w < wordsInLine.length && captionIdx < captions.length; w++) {
+          lineCaptions.push(captions[captionIdx]);
+          captionIdx++;
+        }
+      }
+      result.push(lineCaptions);
+    }
+    return result;
+  };
+
+  // Helper: compute word-level progress and pause status for line captions
+  const calculateCaptionProgress = (
+    lineCaptions: CaptionLike[],
+    sectionTimeMs: number
+  ): { progress: number; isInsideWord: boolean } => {
+    if (lineCaptions.length === 0) {
+      return { progress: 0, isInsideWord: false };
+    }
+
+    const lineStartMs = lineCaptions[0].startMs;
+    const lineEndMs = lineCaptions[lineCaptions.length - 1].endMs;
+
+    if (sectionTimeMs <= lineStartMs) {
+      return { progress: 0, isInsideWord: false };
+    }
+    if (sectionTimeMs >= lineEndMs) {
+      return { progress: 1, isInsideWord: false };
+    }
+
+    const totalWordChars = lineCaptions.reduce((acc, c) => acc + Math.max(1, c.text.length), 0);
+    let charsCompleted = 0;
+    let isInsideWord = false;
+
+    for (let k = 0; k < lineCaptions.length; k++) {
+      const word = lineCaptions[k];
+      const wordLen = Math.max(1, word.text.length);
+
+      if (sectionTimeMs < word.startMs) {
+        // Pausing before next word
+        break;
+      } else if (sectionTimeMs >= word.startMs && sectionTimeMs <= word.endMs) {
+        isInsideWord = true;
+        const wordSpan = Math.max(1, word.endMs - word.startMs);
+        const wordFrac = Math.min(1, Math.max(0, (sectionTimeMs - word.startMs) / wordSpan));
+        charsCompleted += wordFrac * wordLen;
+        break;
+      } else {
+        charsCompleted += wordLen;
+      }
+    }
+
+    const progress = Math.min(1, Math.max(0, charsCompleted / totalWordChars));
+    return { progress, isInsideWord };
+  };
+
   // 1. Calculate Hook Lines timing synchronized with voiceover
+  const hasHookCaptions = hookCaptions && hookCaptions.length > 0;
+  const hookCaptionsByLine = groupCaptionsByLines(actualHookLines, hookCaptions);
+
   const totalHookFrames = Math.max(1, hookEndFrame - hookStartFrame);
   const totalHookChars = actualHookLines.reduce((sum, l) => sum + Math.max(1, l.trim().length), 0) || 1;
-
-  // Initial vocal delay (~7-8 frames) so pen starts writing right as speech phonation begins
   const hookSpeechOffset = actualHookLines.length > 0 ? Math.min(8, Math.floor(totalHookFrames * 0.06)) : 0;
   const availableHookFrames = Math.max(actualHookLines.length * 28, totalHookFrames - hookSpeechOffset);
 
   let currentHookFrame = hookStartFrame + hookSpeechOffset;
-  const renderedHookLines = actualHookLines.map((line, index) => {
-    const lineChars = Math.max(1, line.trim().length);
-    const lineWeight = lineChars / totalHookChars;
-    // Allocate writing duration proportionally to this line's spoken character count
-    const allocatedFrames = Math.max(28, Math.round(availableHookFrames * lineWeight));
-    
-    const lineStart = currentHookFrame;
-    // Pen stays active for 96% of line time, preventing pen from rushing ahead and freezing
-    const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
-    currentHookFrame = lineStart + allocatedFrames;
-
-    const progress = interpolate(frame, [lineStart, lineEnd], [0, 1], {
-      extrapolateLeft: 'clamp',
-      extrapolateRight: 'clamp',
-    });
-
-    const isCurrentLine = frame >= lineStart && frame <= lineEnd + 3;
+  const screenCenterX = containerLeft + containerWidth / 2; // 540px center of screen
+  const hookLineTimings = actualHookLines.map((line, index) => {
     const lineY = startTop + index * lineSpacing + hookShiftY;
+    const words = line.trim().split(/\s+/).filter(Boolean);
+    const charCount = line.replace(/\s+/g, '').length;
+    const spaceCount = Math.max(0, words.length - 1);
+    const charFactor = isKasheeda ? 0.58 : 0.40;
+    const rawWidth = charCount * (fontSize * charFactor) + spaceCount * (fontSize * 0.28);
+    const estLineWidth = Math.min(containerWidth - 20, Math.max(fontSize * 1.1, rawWidth));
+    const startX = screenCenterX + estLineWidth / 2;
+    const endX = screenCenterX - estLineWidth / 2;
 
-    const estLineWidth = Math.min(
-      containerWidth,
-      Math.max(220, line.trim().length * (fontSize * widthMultiplier))
-    );
+    if (hasHookCaptions) {
+      const lineCaps = hookCaptionsByLine[index] || [];
+      const lineStartMs = lineCaps[0]?.startMs ?? (index * 2000);
+      const lineEndMs = lineCaps[lineCaps.length - 1]?.endMs ?? ((index + 1) * 2000);
+      const lineStart = hookStartFrame + Math.floor((lineStartMs / 1000) * 30);
+      const lineEnd = hookStartFrame + Math.ceil((lineEndMs / 1000) * 30);
+      return { line, index, lineY, startX, endX, lineStart, lineEnd, lineCaps, isCaptionDriven: true };
+    } else {
+      const lineChars = Math.max(1, line.trim().length);
+      const lineWeight = lineChars / totalHookChars;
+      const allocatedFrames = Math.max(28, Math.round(availableHookFrames * lineWeight));
+      const lineStart = currentHookFrame;
+      const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
+      currentHookFrame = lineStart + allocatedFrames;
+      return { line, index, lineY, startX, endX, lineStart, lineEnd, lineCaps: [], isCaptionDriven: false };
+    }
+  });
 
-    // Centered alignment with 6px right-side writing margin
-    const startX = containerLeft + (containerWidth + estLineWidth) / 2 - 6;
-    const endX = containerLeft + (containerWidth - estLineWidth) / 2;
+  const renderedHookLines = hookLineTimings.map((item, index) => {
+    let progress = 0;
+    let isInsideWord = true;
+
+    if (item.isCaptionDriven) {
+      const sectionTimeMs = ((frame - hookStartFrame) / 30) * 1000;
+      const res = calculateCaptionProgress(item.lineCaps, sectionTimeMs);
+      progress = res.progress;
+      isInsideWord = res.isInsideWord;
+    } else {
+      progress = interpolate(frame, [item.lineStart, item.lineEnd], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    }
+
+    const isCurrentLine = frame >= item.lineStart && frame <= item.lineEnd + 3;
 
     if (isCurrentLine) {
       isPenActive = true;
       penOpacity = interpolate(
         frame,
-        [lineStart, lineStart + 4, lineEnd, lineEnd + 5],
+        [item.lineStart, item.lineStart + 4, item.lineEnd, item.lineEnd + 4],
         [0, 1, 1, 0.7],
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
       );
 
-      const xPos = startX - progress * (startX - endX);
-      const yWave =
-        Math.sin(progress * Math.PI * 20) * 7 +
-        Math.cos(progress * Math.PI * 10) * 3;
+      const xPos = item.startX - progress * (item.startX - item.endX);
+      const yWave = isInsideWord
+        ? (Math.sin(progress * Math.PI * 20) * 7 + Math.cos(progress * Math.PI * 10) * 3)
+        : 0;
 
       activePenX = xPos;
-      activePenY = lineY + Math.round(fontSize * 0.9) + yWave;
+      activePenY = item.lineY + Math.round(fontSize * 0.9) + yWave;
+    } else if (index < hookLineTimings.length - 1) {
+      // Smooth inter-line glide between line completion and next line start
+      const nextLine = hookLineTimings[index + 1];
+      if (frame > item.lineEnd + 3 && frame < nextLine.lineStart) {
+        const glide = interpolate(frame, [item.lineEnd + 3, nextLine.lineStart], [0, 1], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        });
+        isPenActive = true;
+        penOpacity = 0.8;
+        activePenX = item.endX + glide * (nextLine.startX - item.endX);
+        activePenY = item.lineY + glide * (nextLine.lineY - item.lineY) + Math.round(fontSize * 0.9);
+      }
     }
 
     return {
-      text: line,
+      text: item.line,
       progress,
-      lineY,
+      lineY: item.lineY,
     };
   });
 
@@ -216,64 +338,97 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     ? urduEndFrame
     : bodyEndFrame;
 
+  const hasBodyCaptions = bodyCaptions && bodyCaptions.length > 0;
+  const bodyCaptionsByLine = groupCaptionsByLines(actualBodyLines, bodyCaptions);
+
   const totalBodyFrames = Math.max(1, bodyEffectiveEnd - bodyEffectiveStart);
   const totalBodyChars = actualBodyLines.reduce((sum, l) => sum + Math.max(1, l.trim().length), 0) || 1;
-
   const bodySpeechOffset = actualBodyLines.length > 0 ? Math.min(8, Math.floor(totalBodyFrames * 0.05)) : 0;
   const availableBodyFrames = Math.max(actualBodyLines.length * 28, totalBodyFrames - bodySpeechOffset);
 
   const bodyBaseY = startTop + actualHookLines.length * lineSpacing + sectionGap;
 
   let currentBodyFrame = bodyEffectiveStart + bodySpeechOffset;
-  const renderedBodyLines = actualBodyLines.map((line, index) => {
-    const lineChars = Math.max(1, line.trim().length);
-    const lineWeight = lineChars / totalBodyChars;
-    // Allocate writing duration proportionally to this line's spoken character count
-    const allocatedFrames = Math.max(28, Math.round(availableBodyFrames * lineWeight));
-
-    const lineStart = currentBodyFrame;
-    const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
-    currentBodyFrame = lineStart + allocatedFrames;
-
-    const progress = interpolate(frame, [lineStart, lineEnd], [0, 1], {
-      extrapolateLeft: 'clamp',
-      extrapolateRight: 'clamp',
-    });
-
-    const isCurrentLine = frame >= lineStart && frame <= lineEnd + 3;
+  const bodyLineTimings = actualBodyLines.map((line, index) => {
     const lineY = bodyBaseY + index * lineSpacing;
+    const words = line.trim().split(/\s+/).filter(Boolean);
+    const charCount = line.replace(/\s+/g, '').length;
+    const spaceCount = Math.max(0, words.length - 1);
+    const rawWidth = charCount * (fontSize * 0.40) + spaceCount * (fontSize * 0.28);
+    const estLineWidth = Math.min(containerWidth - 20, Math.max(fontSize * 1.1, rawWidth));
+    const startX = screenCenterX + estLineWidth / 2;
+    const endX = screenCenterX - estLineWidth / 2;
 
-    const estLineWidth = Math.min(
-      containerWidth,
-      Math.max(220, line.trim().length * (fontSize * widthMultiplier))
-    );
+    if (hasBodyCaptions) {
+      const lineCaps = bodyCaptionsByLine[index] || [];
+      const lineStartMs = lineCaps[0]?.startMs ?? (index * 2000);
+      const lineEndMs = lineCaps[lineCaps.length - 1]?.endMs ?? ((index + 1) * 2000);
+      const lineStart = bodyEffectiveStart + Math.floor((lineStartMs / 1000) * 30);
+      const lineEnd = bodyEffectiveStart + Math.ceil((lineEndMs / 1000) * 30);
+      return { line, index, lineY, startX, endX, lineStart, lineEnd, lineCaps, isCaptionDriven: true };
+    } else {
+      const lineChars = Math.max(1, line.trim().length);
+      const lineWeight = lineChars / totalBodyChars;
+      const allocatedFrames = Math.max(28, Math.round(availableBodyFrames * lineWeight));
+      const lineStart = currentBodyFrame;
+      const lineEnd = lineStart + Math.max(26, Math.floor(allocatedFrames * 0.96));
+      currentBodyFrame = lineStart + allocatedFrames;
+      return { line, index, lineY, startX, endX, lineStart, lineEnd, lineCaps: [], isCaptionDriven: false };
+    }
+  });
 
-    // Centered alignment with 6px right-side writing margin
-    const startX = containerLeft + (containerWidth + estLineWidth) / 2 - 6;
-    const endX = containerLeft + (containerWidth - estLineWidth) / 2;
+  const renderedBodyLines = bodyLineTimings.map((item, index) => {
+    let progress = 0;
+    let isInsideWord = true;
+
+    if (item.isCaptionDriven) {
+      const sectionTimeMs = ((frame - bodyEffectiveStart) / 30) * 1000;
+      const res = calculateCaptionProgress(item.lineCaps, sectionTimeMs);
+      progress = res.progress;
+      isInsideWord = res.isInsideWord;
+    } else {
+      progress = interpolate(frame, [item.lineStart, item.lineEnd], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    }
+
+    const isCurrentLine = frame >= item.lineStart && frame <= item.lineEnd + 3;
 
     if (isCurrentLine) {
       isPenActive = true;
       penOpacity = interpolate(
         frame,
-        [lineStart, lineStart + 4, lineEnd, lineEnd + 5],
+        [item.lineStart, item.lineStart + 4, item.lineEnd, item.lineEnd + 4],
         [0, 1, 1, 0.7],
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
       );
 
-      const xPos = startX - progress * (startX - endX);
-      const yWave =
-        Math.sin(progress * Math.PI * 20) * 7 +
-        Math.cos(progress * Math.PI * 10) * 3;
+      const xPos = item.startX - progress * (item.startX - item.endX);
+      const yWave = isInsideWord
+        ? (Math.sin(progress * Math.PI * 20) * 7 + Math.cos(progress * Math.PI * 10) * 3)
+        : 0;
 
       activePenX = xPos;
-      activePenY = lineY + Math.round(fontSize * 0.9) + yWave;
+      activePenY = item.lineY + Math.round(fontSize * 0.9) + yWave;
+    } else if (index < bodyLineTimings.length - 1) {
+      const nextLine = bodyLineTimings[index + 1];
+      if (frame > item.lineEnd + 3 && frame < nextLine.lineStart) {
+        const glide = interpolate(frame, [item.lineEnd + 3, nextLine.lineStart], [0, 1], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        });
+        isPenActive = true;
+        penOpacity = 0.8;
+        activePenX = item.endX + glide * (nextLine.startX - item.endX);
+        activePenY = item.lineY + glide * (nextLine.lineY - item.lineY) + Math.round(fontSize * 0.9);
+      }
     }
 
     return {
-      text: line,
+      text: item.line,
       progress,
-      lineY,
+      lineY: item.lineY,
     };
   });
 
@@ -322,22 +477,33 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
               style={{
                 position: 'absolute',
                 top: item.lineY,
+                left: 0,
                 width: '100%',
-                textAlign: textAlignment,
-                direction: 'rtl',
-                fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
-                fontSize: Math.round(fontSize * 1.04),
-                fontWeight: 700,
-                lineHeight: 2.0,
-                color: hookTextColor,
-                textShadow: hookShadow,
-                clipPath: `inset(0 0 0 ${leftClip}%)`,
-                WebkitClipPath: `inset(0 0 0 ${leftClip}%)`,
-                whiteSpace: 'nowrap',
-                overflow: 'visible',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                pointerEvents: 'none',
               }}
             >
-              {item.text}
+              <div
+                style={{
+                  display: 'inline-block',
+                  textAlign: textAlignment,
+                  direction: 'rtl',
+                  fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
+                  fontSize: Math.round(fontSize * 1.04),
+                  fontWeight: 700,
+                  lineHeight: 2.0,
+                  color: hookTextColor,
+                  textShadow: hookShadow,
+                  clipPath: `inset(0 0 0 ${leftClip}%)`,
+                  WebkitClipPath: `inset(0 0 0 ${leftClip}%)`,
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
+              >
+                {item.text}
+              </div>
             </div>
           );
         })}
@@ -386,22 +552,33 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
               style={{
                 position: 'absolute',
                 top: item.lineY,
+                left: 0,
                 width: '100%',
-                textAlign: textAlignment,
-                direction: 'rtl',
-                fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
-                fontSize,
-                fontWeight: 600,
-                lineHeight: 2.0,
-                color: urduTextColor,
-                textShadow: inkShadow,
-                clipPath: `inset(0 0 0 ${leftClip}%)`,
-                WebkitClipPath: `inset(0 0 0 ${leftClip}%)`,
-                whiteSpace: 'nowrap',
-                overflow: 'visible',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                pointerEvents: 'none',
               }}
             >
-              {item.text}
+              <div
+                style={{
+                  display: 'inline-block',
+                  textAlign: textAlignment,
+                  direction: 'rtl',
+                  fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
+                  fontSize,
+                  fontWeight: 600,
+                  lineHeight: 2.0,
+                  color: urduTextColor,
+                  textShadow: inkShadow,
+                  clipPath: `inset(0 0 0 ${leftClip}%)`,
+                  WebkitClipPath: `inset(0 0 0 ${leftClip}%)`,
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
+              >
+                {item.text}
+              </div>
             </div>
           );
         })}

@@ -47,9 +47,19 @@ export function getRandomUrduFont(): string {
  * Resolves a specific calligraphy font or returns a stable default font
  */
 export function resolveUrduFont(fontFamily?: string): string {
-  let resolved = fontFamily;
-  if (!resolved || resolved === 'random' || !URDU_CALLIGRAPHY_FONTS.includes(resolved as any)) {
-    resolved = URDU_CALLIGRAPHY_FONTS[0];
+  if (!fontFamily || fontFamily === 'random') {
+    const font = URDU_CALLIGRAPHY_FONTS[0];
+    ensureFontLoaded(font);
+    return font;
+  }
+  const lower = fontFamily.trim().toLowerCase();
+  let resolved: string = URDU_CALLIGRAPHY_FONTS[0];
+  if (lower.includes('kasheeda')) {
+    resolved = 'Jameel Noori Nastaleeq Kasheeda';
+  } else if (lower.includes('nastaleeq') || lower.includes('jameel')) {
+    resolved = 'Jameel Noori Nastaleeq';
+  } else if (URDU_CALLIGRAPHY_FONTS.includes(fontFamily as any)) {
+    resolved = fontFamily;
   }
   ensureFontLoaded(resolved);
   return resolved;

@@ -10,6 +10,7 @@ out/
 dist/
 build/
 public/audio/tts/*.mp3
+public/audio/tts/*.srt
 test_*.mp3
 
 # Environment files

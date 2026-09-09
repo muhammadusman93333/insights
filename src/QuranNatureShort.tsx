@@ -219,6 +219,8 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
           bodyLines={timing.bodyLines}
           bodyStartFrame={timing.bodyStartFrame}
           bodyEndFrame={timing.bodyEndFrame}
+          hookCaptions={resolvedProps.hookCaptions}
+          bodyCaptions={resolvedProps.bodyCaptions}
           shiftStartFrame={timing.shiftStartFrame}
           shiftEndFrame={timing.shiftEndFrame}
           shouldShift={timing.shouldShift}

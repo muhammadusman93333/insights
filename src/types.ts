@@ -97,6 +97,23 @@ export const urduInsightSchema = z.object({
   voiceoverVoice: z.string().optional().default('ur-PK-AsadNeural'),
   voiceoverRate: z.string().optional().default('-5%'),
   voiceoverPitch: z.string().optional().default('-1Hz'),
+  // Remotion Captions synchronization
+  hookCaptions: z.array(z.object({
+    text: z.string(),
+    startMs: z.number(),
+    endMs: z.number(),
+    timestampMs: z.number().nullable().optional(),
+    confidence: z.number().nullable().optional(),
+  })).optional(),
+  bodyCaptions: z.array(z.object({
+    text: z.string(),
+    startMs: z.number(),
+    endMs: z.number(),
+    timestampMs: z.number().nullable().optional(),
+    confidence: z.number().nullable().optional(),
+  })).optional(),
+  hookSrt: z.string().optional(),
+  bodySrt: z.string().optional(),
   // Styling overrides for background/text visibility
   urduTextColor: z.string().optional(),
   hookTextColor: z.string().optional(),

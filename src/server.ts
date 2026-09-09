@@ -188,6 +188,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
+      fontFamily: body.fontFamily || body.font || defaultProps.fontFamily,
       urduText: body.body || body.bodyText || body.urduText || '',
     };
 
@@ -233,7 +234,11 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
           });
           payload.hookAudioSrc = `${serverBaseUrl}/audio/${hookRes.filename}`;
           payload.hookAudioDuration = hookRes.duration;
-          console.log(`  ✅ Hook Voiceover ready: ${hookRes.filename} (${hookRes.duration}s)`);
+          payload.hookCaptions = hookRes.captions;
+          if (hookRes.srtPath && fs.existsSync(hookRes.srtPath)) {
+            payload.hookSrt = fs.readFileSync(hookRes.srtPath, 'utf-8');
+          }
+          console.log(`  ✅ Hook Voiceover ready: ${hookRes.filename} (${hookRes.duration}s, ${hookRes.captions?.length ?? 0} caption words)`);
         } catch (err: any) {
           console.warn(`  ⚠️ Hook voiceover synthesis error:`, err.message);
         }
@@ -252,7 +257,11 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
           });
           payload.bodyAudioSrc = `${serverBaseUrl}/audio/${bodyRes.filename}`;
           payload.bodyAudioDuration = bodyRes.duration;
-          console.log(`  ✅ Body Voiceover ready: ${bodyRes.filename} (${bodyRes.duration}s)`);
+          payload.bodyCaptions = bodyRes.captions;
+          if (bodyRes.srtPath && fs.existsSync(bodyRes.srtPath)) {
+            payload.bodySrt = fs.readFileSync(bodyRes.srtPath, 'utf-8');
+          }
+          console.log(`  ✅ Body Voiceover ready: ${bodyRes.filename} (${bodyRes.duration}s, ${bodyRes.captions?.length ?? 0} caption words)`);
         } catch (err: any) {
           console.warn(`  ⚠️ Body voiceover synthesis error:`, err.message);
         }

@@ -1,7 +1,7 @@
 import { UrduInsightPayload } from '../types';
 import { getRandomPaperId } from './paperSelector';
 import { getRandomQalamId } from './qalamSelector';
-import { getRandomUrduFont } from './fontSelector';
+import { getRandomUrduFont, resolveUrduFont } from './fontSelector';
 import { getRandomAudioTrack } from './audioSelector';
 import { getRandomNatureConfig, resolveNatureConfig } from './natureSelector';
 
@@ -23,9 +23,11 @@ export function resolveConcretePayload(payload: UrduInsightPayload): UrduInsight
     resolved.qalam = getRandomQalamId() as any;
   }
 
-  // 3. Pick a single random Urdu calligraphy font once
+  // 3. Pick a single random Urdu calligraphy font once or normalize provided font
   if (!resolved.fontFamily || resolved.fontFamily === 'random') {
     resolved.fontFamily = getRandomUrduFont() as any;
+  } else {
+    resolved.fontFamily = resolveUrduFont(resolved.fontFamily) as any;
   }
 
   // 4. Pick a single random background music track once

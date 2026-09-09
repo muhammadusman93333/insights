@@ -112,6 +112,8 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         bodyLines={timing.bodyLines}
         bodyStartFrame={timing.bodyStartFrame}
         bodyEndFrame={timing.bodyEndFrame}
+        hookCaptions={props.hookCaptions}
+        bodyCaptions={props.bodyCaptions}
         shiftStartFrame={timing.shiftStartFrame}
         shiftEndFrame={timing.shiftEndFrame}
         shouldShift={timing.shouldShift}

@@ -102,6 +102,10 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
         });
         payload.hookAudioSrc = `audio/tts/${hookRes.filename}`;
         payload.hookAudioDuration = hookRes.duration;
+        payload.hookCaptions = hookRes.captions;
+        if (hookRes.srtPath && fs.existsSync(hookRes.srtPath)) {
+          payload.hookSrt = fs.readFileSync(hookRes.srtPath, 'utf-8');
+        }
       } catch (err: any) {
         console.warn(`⚠️ Hook voiceover synthesis error:`, err.message);
       }
@@ -119,6 +123,10 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
         });
         payload.bodyAudioSrc = `audio/tts/${bodyRes.filename}`;
         payload.bodyAudioDuration = bodyRes.duration;
+        payload.bodyCaptions = bodyRes.captions;
+        if (bodyRes.srtPath && fs.existsSync(bodyRes.srtPath)) {
+          payload.bodySrt = fs.readFileSync(bodyRes.srtPath, 'utf-8');
+        }
       } catch (err: any) {
         console.warn(`⚠️ Body voiceover synthesis error:`, err.message);
       }
