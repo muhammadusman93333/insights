@@ -204,7 +204,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
           shiftStartFrame={timing.shiftStartFrame}
           shiftEndFrame={timing.shiftEndFrame}
           shouldShift={timing.shouldShift}
-          centerOffsetY={520}
+          centerOffsetY={0}
           titleTextColor={titleTextColor}
           titleTextShadow={titleTextShadow}
           badgeBgColor={headerBadgeBgColor}
@@ -268,6 +268,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
         bodyAudioSrc={props.bodyAudioSrc}
         bodyAudioStartFrame={timing.bodyStartFrame}
         voiceoverAudio={props.voiceoverAudio}
+        voiceoverStartFrame={timing.hookStartFrame}
         voiceoverVolume={props.voiceoverVolume}
       />
     </div>

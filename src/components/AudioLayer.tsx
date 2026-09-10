@@ -51,11 +51,11 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
   penVolume,
   writingIntervals = [],
   hookAudioSrc,
-  hookAudioStartFrame = 45,
+  hookAudioStartFrame = 0,
   bodyAudioSrc,
   bodyAudioStartFrame = 120,
   voiceoverAudio,
-  voiceoverStartFrame = 45,
+  voiceoverStartFrame = 0,
   voiceoverVolume = 1.0,
 }) => {
   const { durationInFrames } = useVideoConfig();
@@ -109,9 +109,9 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
         <Audio
           src={resolvedBgMusicSrc}
           volume={(f) => {
-            // Smooth fade in over first 45 frames (1.5s)
-            if (f < 45) {
-              return (f / 45) * effectiveMusicVolume;
+            // Smooth fast fade in over first 15 frames (0.5s)
+            if (f < 15) {
+              return (f / 15) * effectiveMusicVolume;
             }
             // Smooth fade out over last 60 frames (2s)
             if (f > durationInFrames - 60) {

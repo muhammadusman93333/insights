@@ -24,7 +24,7 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
   shiftStartFrame = 0,
   shiftEndFrame = 0,
   shouldShift = false,
-  centerOffsetY = 520,
+  centerOffsetY = 0,
   titleTextColor,
   titleTextShadow,
   badgeBgColor,
@@ -34,17 +34,17 @@ export const NatureHeader: React.FC<NatureHeaderProps> = ({
 
   if (!title) return null;
 
-  // Smooth cinematic entrance
-  const opacity = interpolate(frame, [0, 25], [0, 1], {
+  // Smooth cinematic entrance right at frame 0
+  const opacity = interpolate(frame, [0, 15], [0, 1], {
     extrapolateRight: 'clamp',
   });
-  const entranceSlide = interpolate(frame, [0, 25], [-20, 0], {
+  const entranceSlide = interpolate(frame, [0, 15], [-15, 0], {
     extrapolateRight: 'clamp',
   });
 
-  // Smooth center-to-top glide animation (stays centered if only Hook is rendered)
+  // Smooth center-to-top glide animation (when centerOffsetY is specified; defaults to 0 at top)
   const shiftY =
-    shouldShift && shiftEndFrame > shiftStartFrame
+    shouldShift && shiftEndFrame > shiftStartFrame && centerOffsetY !== 0
       ? interpolate(frame, [shiftStartFrame, shiftEndFrame], [centerOffsetY, 0], {
           extrapolateLeft: 'clamp',
           extrapolateRight: 'clamp',

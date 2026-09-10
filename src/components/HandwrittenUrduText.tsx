@@ -46,7 +46,7 @@ interface HandwrittenUrduTextProps {
 
 export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
   hookLines,
-  hookStartFrame = 45,
+  hookStartFrame = 0,
   hookEndFrame = 120,
   bodyLines,
   bodyStartFrame = 135,
@@ -240,10 +240,10 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
 
   const totalHookFrames = Math.max(1, hookEndFrame - hookStartFrame);
   const totalHookChars = actualHookLines.reduce((sum, l) => sum + Math.max(1, l.trim().length), 0) || 1;
-  const hookSpeechOffset = actualHookLines.length > 0 ? Math.min(8, Math.floor(totalHookFrames * 0.06)) : 0;
-  const availableHookFrames = Math.max(actualHookLines.length * 28, totalHookFrames - hookSpeechOffset);
+  const hookSpeechOffset = 0;
+  const availableHookFrames = Math.max(actualHookLines.length * 28, totalHookFrames);
 
-  let currentHookFrame = hookStartFrame + hookSpeechOffset;
+  let currentHookFrame = hookStartFrame;
   const screenCenterX = containerLeft + containerWidth / 2; // 540px center of screen
   const hookLineTimings = actualHookLines.map((line, index) => {
     const lineY = startTop + index * lineSpacing + hookShiftY;

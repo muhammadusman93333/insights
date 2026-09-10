@@ -101,7 +101,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         shiftStartFrame={timing.shiftStartFrame}
         shiftEndFrame={timing.shiftEndFrame}
         shouldShift={timing.shouldShift}
-        centerOffsetY={520}
+        centerOffsetY={0}
         fontFamily={selectedFont}
       />
       {/* 2 & 3. Synchronized Handwritten Calligraphy Text (Hook + Insight Body) */}
@@ -140,6 +140,7 @@ export const QuranHandwrittenShort: React.FC<CompositionProps> = (props) => {
         bodyAudioSrc={props.bodyAudioSrc}
         bodyAudioStartFrame={timing.bodyStartFrame}
         voiceoverAudio={props.voiceoverAudio}
+        voiceoverStartFrame={timing.hookStartFrame}
         voiceoverVolume={props.voiceoverVolume}
       />
       {/* 4. Subtle floating golden light motes / bokeh & dust particles */}

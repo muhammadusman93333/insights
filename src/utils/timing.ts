@@ -101,8 +101,8 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
   const hookLines = rawHook ? splitUrduIntoLines(rawHook, hookFont) : [];
   const bodyLines = rawBody ? splitUrduIntoLines(rawBody, undefined) : [];
 
-  const headerStartFrame = 5;
-  const headerEndFrame = 35;
+  const headerStartFrame = 0;
+  const headerEndFrame = 15;
 
   let hookStartFrame = 0;
   let hookEndFrame = 0;
@@ -124,8 +124,8 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     : 0;
 
   if (hookLines.length > 0 && bodyLines.length > 0) {
-    // 1. Hook begins in center after Title header
-    hookStartFrame = headerEndFrame + 10;
+    // 1. Hook begins immediately at 0.0s (Frame 0) centered on screen with instant voiceover
+    hookStartFrame = 0;
     let hookWritingFrames = hookCaptionFrames;
     if (!hookWritingFrames) {
       for (const line of hookLines) {
@@ -137,7 +137,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     hookWritingFrames = Math.max(hookWritingFrames, minHookFrames);
     hookEndFrame = hookStartFrame + Math.max(60, hookWritingFrames);
 
-    // 2. Smoothly shift Title + Hook from Center to Top
+    // 2. Smoothly shift Hook from Center to Top under the header
     shiftStartFrame = hookEndFrame + 8;
     shiftEndFrame = shiftStartFrame + 24;
     shouldShift = true;
@@ -155,8 +155,8 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     bodyWritingFrames = Math.max(bodyWritingFrames, minBodyFrames);
     bodyEndFrame = bodyStartFrame + Math.max(70, bodyWritingFrames);
   } else if (hookLines.length > 0) {
-    // Only hook is provided (stays centered)
-    hookStartFrame = headerEndFrame + 10;
+    // Only hook is provided (starts at 0.0s, stays centered)
+    hookStartFrame = 0;
     let hookWritingFrames = hookCaptionFrames;
     if (!hookWritingFrames) {
       for (const line of hookLines) {
@@ -173,12 +173,11 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     bodyStartFrame = hookEndFrame;
     bodyEndFrame = hookEndFrame;
   } else {
-    // Only body / urduText is provided (Title starts center, shifts to top, then body writes)
-    shiftStartFrame = headerEndFrame + 12;
-    shiftEndFrame = shiftStartFrame + 24;
-    shouldShift = true;
-
-    bodyStartFrame = shiftEndFrame + 10;
+    // Only body / urduText is provided (starts immediately at 0.0s)
+    shiftStartFrame = 0;
+    shiftEndFrame = 0;
+    shouldShift = false;
+    bodyStartFrame = 0;
     let bodyWritingFrames = bodyCaptionFrames;
     if (!bodyWritingFrames) {
       for (const line of bodyLines) {
