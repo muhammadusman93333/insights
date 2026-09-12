@@ -10,10 +10,7 @@ import { NatureHeader } from './components/NatureHeader';
 import { NatureFooter } from './components/NatureFooter';
 import { HandwrittenUrduText } from './components/HandwrittenUrduText';
 import { AudioLayer } from './components/AudioLayer';
-import { staticFile, CanvasImage } from "remotion";
-import { brightness } from "@remotion/effects/brightness";
-import { contrast } from "@remotion/effects/contrast";
-import { getSeededNatureConfig, resolveNatureConfig, NATURE_COLLECTION } from './utils/natureSelector';
+import { resolveNatureConfig, getSeededNatureConfig, NATURE_COLLECTION } from './utils/natureSelector';
 
 export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
   // Resolve props deterministically if they are raw (e.g. in Studio preview)
@@ -73,6 +70,10 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
     showGodRays = true,
     showNatureParticles = true,
     kenBurnsZoom = 1.08,
+    enableLivingBackground = true,
+    waveMotion = true,
+    showLightLeaks = true,
+    showMist = true,
     qalam = 'random',
     qalamScale = 6,
     fontFamily = 'random',
@@ -178,7 +179,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
         backgroundColor: '#071008',
       }}
     >
-      {/* 1. Fullscreen 9:16 Nature Backdrop with Ken Burns zoom, God Rays, & Firefly motes */}
+      {/* 1. Fullscreen 9:16 Nature Backdrop with Living Video Effects (Wave, Light Leaks, Mist, Parallax) */}
       <NatureBackdrop
         backgroundImage={backgroundImage}
         primaryColor={primaryColor}
@@ -186,6 +187,10 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
         showGodRays={showGodRays}
         showNatureParticles={showNatureParticles}
         kenBurnsZoom={kenBurnsZoom}
+        enableLivingBackground={enableLivingBackground}
+        waveMotion={waveMotion}
+        showLightLeaks={showLightLeaks}
+        showMist={showMist}
       />
       {/* 2. Frosted Nature Glassmorphism Card Canvas */}
       <NatureCanvas

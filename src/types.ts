@@ -51,8 +51,11 @@ export type UrduFontFamilyType = z.infer<typeof urduFontFamilySchema>;
 export const templateSchema = z.enum([
   'parchment',
   'nature',
+  'handwritten',
+  'pexels',
   'QuranHandwrittenShort',
   'QuranNatureShort',
+  'CinematicPexelsShort',
 ]);
 
 export type TemplateType = z.infer<typeof templateSchema>;
@@ -67,6 +70,10 @@ export const urduInsightSchema = z.object({
   showGodRays: z.boolean().optional().default(true),
   showNatureParticles: z.boolean().optional().default(true),
   kenBurnsZoom: z.number().optional().default(1.08),
+  enableLivingBackground: z.boolean().optional().default(true),
+  waveMotion: z.boolean().optional().default(true),
+  showLightLeaks: z.boolean().optional().default(true),
+  showMist: z.boolean().optional().default(true),
   title: z.string().optional(),
   hook: z.string().optional(),
   body: z.string().optional(),
@@ -130,6 +137,10 @@ export const urduInsightSchema = z.object({
   footerBadgeBorderColor: z.string().optional(),
   glassCardBg: z.string().optional(),
   glassCardBorder: z.string().optional(),
+  // Pexels Vertical Video Background
+  pexelsQuery: z.string().optional(),
+  pexelsApiKey: z.string().optional(),
+  backgroundVideoUrl: z.string().optional(),
 });
 
 export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;
@@ -145,6 +156,10 @@ export const defaultProps: UrduInsightPayload = {
   showGodRays: true,
   showNatureParticles: true,
   kenBurnsZoom: 1.08,
+  enableLivingBackground: true,
+  waveMotion: true,
+  showLightLeaks: true,
+  showMist: true,
   title: 'خاموش پکار',
   hook: 'کیا آپ کو بھی لگتا ہے کہ جب دکھ کی شدت سے لفظ ساتھ چھوڑ دیں، تو کوئی آپ کے اندر کے شور کو نہیں سن پاتا؟',
   urduText: '',

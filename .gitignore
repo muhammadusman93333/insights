@@ -11,6 +11,7 @@ dist/
 build/
 public/audio/tts/*.mp3
 public/audio/tts/*.srt
+public/videos/cache/
 test_*.mp3
 
 # Environment files

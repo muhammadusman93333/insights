@@ -82,6 +82,29 @@ export function resolveConcretePayload(payload: UrduInsightPayload): UrduInsight
     }
   }
 
+  // 6. Provide high-contrast cinematic dark defaults for CinematicPexelsShort
+  if (resolved.template === 'CinematicPexelsShort' || resolved.template === 'pexels') {
+    resolved.template = 'CinematicPexelsShort';
+    if (!resolved.primaryColor || resolved.primaryColor === '#2d4a22') {
+      resolved.primaryColor = '#0f172a';
+    }
+    if (!resolved.accentColor || resolved.accentColor === '#dfb76c' || resolved.accentColor === '#1fdceaff') {
+      resolved.accentColor = '#dfb76c';
+    }
+    if (resolved.overlayOpacity === undefined || resolved.overlayOpacity === 0.42) {
+      resolved.overlayOpacity = 0.58;
+    }
+    resolved.urduTextColor = resolved.urduTextColor || '#ffffff';
+    resolved.hookTextColor = resolved.hookTextColor || '#fffdf5';
+    resolved.titleTextColor = resolved.titleTextColor || '#ffffff';
+    resolved.titleTextShadow = resolved.titleTextShadow || '0 2px 10px rgba(0,0,0,0.85)';
+    resolved.inkShadow = resolved.inkShadow || '0 3px 18px rgba(0,0,0,0.95), 0 0 35px rgba(0,0,0,0.85)';
+    resolved.hookShadow = resolved.hookShadow || '0 3px 18px rgba(0,0,0,0.95), 0 0 35px rgba(0,0,0,0.85)';
+    resolved.dividerColor = resolved.dividerColor || resolved.accentColor;
+    resolved.headerBadgeBgColor = resolved.headerBadgeBgColor || 'rgba(10, 15, 20, 0.75)';
+    resolved.headerBadgeBorderColor = resolved.headerBadgeBorderColor || resolved.accentColor;
+  }
+
   return resolved;
 }
 

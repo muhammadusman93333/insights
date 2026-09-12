@@ -1,10 +1,16 @@
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
 import { bundle } from '@remotion/bundler';
+
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { defaultProps, resolveConcretePayload, UrduInsightPayload } from './types';
 import { calculateVideoTiming } from './utils/timing';
 import { generateUrduTts } from './utils/tts';
+import { resolvePexelsVideo } from './utils/pexelsSelector';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
@@ -32,6 +38,26 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
     payload = { ...payload, ...parsedData };
   } else if (options.inputPayload) {
     payload = { ...payload, ...options.inputPayload };
+  }
+
+  // Handle dynamic Pexels video query if specified in payload
+  const isNonPexelsTemplate =
+    payload.template === 'QuranHandwrittenShort' ||
+    payload.template === 'parchment' ||
+    payload.template === 'handwritten' ||
+    payload.template === 'QuranNatureShort' ||
+    payload.template === 'nature';
+
+  if (!isNonPexelsTemplate && payload.pexelsQuery && typeof payload.pexelsQuery === 'string' && payload.pexelsQuery.trim()) {
+    console.log(`🌊 [Pexels Query]: "${payload.pexelsQuery.trim()}"`);
+    payload.backgroundVideoUrl = await resolvePexelsVideo(
+      payload.pexelsQuery.trim(),
+      payload.pexelsApiKey || (payload as any).apiKey
+    );
+    payload.template = 'CinematicPexelsShort';
+  } else if (isNonPexelsTemplate && payload.pexelsQuery) {
+    console.log(`ℹ️ [Template Override]: "${payload.template}" selected. Ignoring pexelsQuery.`);
+    payload.pexelsQuery = undefined;
   }
 
   // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio
@@ -150,9 +176,11 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
 
   console.log('🔍 Selecting composition...');
   const compositionId =
-    payload.template === 'parchment' || payload.template === 'QuranHandwrittenShort'
-      ? 'QuranHandwrittenShort'
-      : 'QuranNatureShort';
+    payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
+      ? 'CinematicPexelsShort'
+      : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
+          ? 'QuranHandwrittenShort'
+          : 'QuranNatureShort');
 
   const composition = await selectComposition({
     serveUrl: bundleLocation,

@@ -2,11 +2,17 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { defaultProps, resolveConcretePayload, UrduInsightPayload, urduInsightSchema } from './types';
 import { calculateVideoTiming } from './utils/timing';
 import { generateUrduTts } from './utils/tts';
+import { resolvePexelsVideo } from './utils/pexelsSelector';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -184,18 +190,54 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       });
     }
 
+    // -------------------------------------------------------------
+    // Dynamic Pexels Video Background Support
+    // Only applied when template is CinematicPexelsShort / pexels, or not specified.
+    // If template is QuranHandwrittenShort or QuranNatureShort, pexelsQuery is omitted.
+    // -------------------------------------------------------------
+    const requestedTemplate = body.template;
+    const isNonPexelsTemplate =
+      requestedTemplate === 'QuranHandwrittenShort' ||
+      requestedTemplate === 'parchment' ||
+      requestedTemplate === 'handwritten' ||
+      requestedTemplate === 'QuranNatureShort' ||
+      requestedTemplate === 'nature';
+
+    const pexelsQuery = !isNonPexelsTemplate ? (body.pexelsQuery || body.pexels || body.videoQuery) : undefined;
+    let resolvedBgVideo: string | undefined = !isNonPexelsTemplate ? body.backgroundVideoUrl : undefined;
+
+    if (pexelsQuery && typeof pexelsQuery === 'string' && pexelsQuery.trim().length > 0) {
+      console.log(`\n🌊 [Pexels Query Received]: "${pexelsQuery.trim()}"`);
+      resolvedBgVideo = await resolvePexelsVideo(pexelsQuery.trim(), body.pexelsApiKey || body.apiKey);
+      body.template = 'CinematicPexelsShort';
+      body.backgroundVideoUrl = resolvedBgVideo;
+    } else if (isNonPexelsTemplate && body.pexelsQuery) {
+      console.log(`ℹ️ [Template Override]: "${requestedTemplate}" selected. Ignoring pexelsQuery.`);
+    }
+
     // Merge defaults with request body
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
+      template: (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
+      backgroundVideoUrl: resolvedBgVideo || (!isNonPexelsTemplate ? body.backgroundVideoUrl : undefined),
+      pexelsQuery: !isNonPexelsTemplate ? pexelsQuery : undefined,
       fontFamily: body.fontFamily || body.font || defaultProps.fontFamily,
       urduText: body.body || body.bodyText || body.urduText || '',
     };
 
     // Fix random choices once per video so every frame uses the exact same background, pen, font, and audio
     const payload = resolveConcretePayload(rawPayload);
+    if (resolvedBgVideo) {
+      payload.backgroundVideoUrl = resolvedBgVideo;
+    }
+    if (!isNonPexelsTemplate && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
+      payload.template = 'CinematicPexelsShort';
+    }
 
     console.log(`\n📥 API Render Request Received:`);
+    if (payload.template) console.log(`🎬 Template: "${payload.template}"`);
+    if (payload.backgroundVideoUrl) console.log(`🎥 Background Video: "${payload.backgroundVideoUrl}"`);
     if (payload.title) console.log(`🏷️ Title: "${payload.title}"`);
     if (payload.hook) console.log(`🪝 Hook: "${payload.hook.substring(0, 50)}..."`);
     console.log(`✍️ Body: "${(payload.body || payload.urduText).substring(0, 50)}..."`);
@@ -300,15 +342,27 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
             fs.copyFileSync(srcFile, destFile);
           }
         }
+        // Sync local background video into bundle if present
+        if (payload.backgroundVideoUrl && !payload.backgroundVideoUrl.startsWith('http')) {
+          const cleanRel = payload.backgroundVideoUrl.replace(/^\/?public\//, '').replace(/^\//, '');
+          const localSrc = path.join(process.cwd(), 'public', cleanRel);
+          const bundleDest = path.join(bundleLocation, 'public', cleanRel);
+          if (fs.existsSync(localSrc) && !fs.existsSync(bundleDest)) {
+            fs.mkdirSync(path.dirname(bundleDest), { recursive: true });
+            fs.copyFileSync(localSrc, bundleDest);
+          }
+        }
       } catch (syncErr) {
         // Non-blocking fallback
       }
     }
 
     const compositionId =
-      payload.template === 'parchment' || payload.template === 'QuranHandwrittenShort'
-        ? 'QuranHandwrittenShort'
-        : 'QuranNatureShort';
+      payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
+        ? 'CinematicPexelsShort'
+        : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
+            ? 'QuranHandwrittenShort'
+            : 'QuranNatureShort');
 
     // Select composition and compute dynamic duration
     const composition = await selectComposition({
@@ -393,6 +447,8 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       fps: composition.fps,
       width: composition.width,
       height: composition.height,
+      template: payload.template,
+      backgroundVideoUrl: payload.backgroundVideoUrl || null,
       voiceover: {
         voice,
         hookAudioUrl: payload.hookAudioSrc ? `${protocol}://${host}/audio/${path.basename(payload.hookAudioSrc)}` : null,

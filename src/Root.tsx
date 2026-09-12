@@ -2,6 +2,7 @@ import React from 'react';
 import { Composition } from 'remotion';
 import { QuranHandwrittenShort } from './QuranHandwrittenShort';
 import { QuranNatureShort } from './QuranNatureShort';
+import { CinematicPexelsShort } from './CinematicPexelsShort';
 import { defaultProps, urduInsightSchema } from './types';
 import { calculateVideoDurationFrames, FPS } from './utils/timing';
 
@@ -35,6 +36,26 @@ export const Root: React.FC = () => {
         height={1920}
         schema={urduInsightSchema}
         defaultProps={defaultProps}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: calculateVideoDurationFrames(props),
+          };
+        }}
+      />
+
+      {/* 3. Cinematic Pexels Vertical Video Template */}
+      <Composition
+        id="CinematicPexelsShort"
+        component={CinematicPexelsShort}
+        durationInFrames={calculateVideoDurationFrames(defaultProps)}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        schema={urduInsightSchema}
+        defaultProps={{
+          ...defaultProps,
+          template: 'CinematicPexelsShort',
+        }}
         calculateMetadata={({ props }) => {
           return {
             durationInFrames: calculateVideoDurationFrames(props),
