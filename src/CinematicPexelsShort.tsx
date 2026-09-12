@@ -292,13 +292,16 @@ const SeamlessVideoLoop: React.FC<SeamlessVideoLoopProps> = ({
         }}
       />
 
-      {/* 3. Header Title Badge: Sits neatly at top-right from frame 0 */}
+      {/* 3. Header Title Badge: Centered at top */}
       {title && (
         <div
           style={{
             position: 'absolute',
             top: 75,
-            right: 65,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
             zIndex: 20,
             direction: 'rtl',
           }}
