@@ -15,6 +15,9 @@ interface ActionInputs {
   qalam?: string;
   fontFamily?: string;
   bgMusic?: string;
+  template?: string;
+  pexelsQuery?: string;
+  pexelsApiKey?: string;
   payload_json?: string;
   webhook_url?: string;
   upload_url?: string;
@@ -69,6 +72,9 @@ function getInputs(): {
     'qalam',
     'fontFamily',
     'bgMusic',
+    'template',
+    'pexelsQuery',
+    'pexelsApiKey',
     'payload_json',
     'webhook_url',
     'upload_url',

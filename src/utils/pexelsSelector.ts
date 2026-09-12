@@ -98,7 +98,8 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
 
   try {
     console.log(`🔍 [Pexels] Searching portrait videos for query: "${trimmedQuery}"...`);
-    const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(trimmedQuery)}&orientation=portrait&per_page=5`;
+    // Request a larger pool of portrait videos (per_page=15) to ensure variety
+    const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(trimmedQuery)}&orientation=portrait&per_page=15`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -128,12 +129,21 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
       return getFallbackNatureVideo(trimmedQuery);
     }
 
-    // Find the best vertical 9:16 video file across the returned videos
-    let bestFile: PexelsVideoFile | null = null;
-    let bestScore = -1;
+    // Collect the best vertical 9:16 file for each video returned in the pool
+    interface ScoredCandidate {
+      file: PexelsVideoFile;
+      score: number;
+      videoUrl: string;
+      videoId: number;
+    }
+
+    const candidates: ScoredCandidate[] = [];
 
     for (const video of data.videos) {
       if (!video.video_files || !Array.isArray(video.video_files)) continue;
+
+      let videoBestFile: PexelsVideoFile | null = null;
+      let videoBestScore = -1;
 
       for (const file of video.video_files) {
         // Ensure MP4 file format
@@ -173,22 +183,39 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
           score += 10;
         }
 
-        if (score > bestScore) {
-          bestScore = score;
-          bestFile = file;
+        if (score > videoBestScore) {
+          videoBestScore = score;
+          videoBestFile = file;
         }
+      }
+
+      if (videoBestFile && videoBestScore > 0) {
+        candidates.push({
+          file: videoBestFile,
+          score: videoBestScore,
+          videoUrl: video.url,
+          videoId: video.id,
+        });
       }
     }
 
-    if (!bestFile || !bestFile.link) {
+    if (candidates.length === 0) {
       console.warn(`⚠️ [Pexels] No valid vertical MP4 video file found in search results.`);
       console.warn(`🌿 [Pexels] Falling back to local curated nature video.`);
       return getFallbackNatureVideo(trimmedQuery);
     }
 
-    // Log the selected Pexels video link in the console as required
-    console.log(`🎬 [Pexels] Selected video: ${bestFile.width}x${bestFile.height} (${bestFile.quality || 'standard'})`);
-    console.log(`🔗 [Pexels] Direct URL: ${bestFile.link}`);
+    // Filter to top-tier candidates (within 25 points of highest score) and randomly pick one
+    const maxScore = Math.max(...candidates.map((c) => c.score));
+    const topCandidates = candidates.filter((c) => c.score >= Math.max(30, maxScore - 25));
+
+    const selected = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+    const bestFile = selected.file;
+
+    // Log the selected Pexels video links in the console
+    console.log(`🎲 [Pexels] Selected random video from ${topCandidates.length} high-quality candidates: ${bestFile.width}x${bestFile.height} (${bestFile.quality || 'standard'})`);
+    console.log(`🌐 [Pexels Webpage]: ${selected.videoUrl}`);
+    console.log(`🔗 [Pexels Direct Video MP4]: ${bestFile.link}`);
 
     // Download to local cache in public/videos/cache/<hash>.mp4 for smooth rendering
     const cacheDir = path.resolve(process.cwd(), 'public', 'videos', 'cache');

@@ -74,6 +74,20 @@ on:
           - '7'
           - '8'
         default: 'random'
+      template:
+        description: 'Template Style'
+        required: false
+        type: choice
+        options:
+          - 'CinematicPexelsShort'
+          - 'QuranNatureShort'
+          - 'QuranHandwrittenShort'
+        default: 'CinematicPexelsShort'
+      pexelsQuery:
+        description: 'Pexels Video Search Query (e.g. dark stormy clouds)'
+        required: false
+        type: string
+        default: 'dark stormy clouds'
       payload_json:
         description: 'Full JSON Payload String (Optional, overrides above inputs if provided)'
         required: false
@@ -134,10 +148,13 @@ jobs:
           INPUT_QALAM: ${{ github.event.inputs.qalam }}
           INPUT_FONTFAMILY: ${{ github.event.inputs.fontFamily }}
           INPUT_BGMUSIC: ${{ github.event.inputs.bgMusic }}
+          INPUT_TEMPLATE: ${{ github.event.inputs.template }}
+          INPUT_PEXELSQUERY: ${{ github.event.inputs.pexelsQuery }}
           INPUT_PAYLOAD_JSON: ${{ github.event.inputs.payload_json }}
           INPUT_WEBHOOK_URL: ${{ github.event.inputs.webhook_url }}
           INPUT_UPLOAD_URL: ${{ github.event.inputs.upload_url }}
           INPUT_UPLOAD_API_TOKEN: ${{ github.event.inputs.upload_api_token }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL || github.event.inputs.webhook_url }}
           UPLOAD_URL: ${{ secrets.UPLOAD_URL || 'https://uvisionpk.com/insights/upload_video.php' }}
           UPLOAD_API_TOKEN: ${{ secrets.UPLOAD_API_TOKEN || github.event.inputs.upload_api_token }}
