@@ -141,6 +141,7 @@ export const urduInsightSchema = z.object({
   pexelsQuery: z.string().optional(),
   pexelsApiKey: z.string().optional(),
   backgroundVideoUrl: z.string().optional(),
+  backgroundVideoDuration: z.number().optional(),
 });
 
 export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;

@@ -195,6 +195,7 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
           score: videoBestScore,
           videoUrl: video.url,
           videoId: video.id,
+          duration: video.duration,
         });
       }
     }
@@ -213,7 +214,7 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
     const bestFile = selected.file;
 
     // Log the selected Pexels video links in the console
-    console.log(`🎲 [Pexels] Selected random video from ${topCandidates.length} high-quality candidates: ${bestFile.width}x${bestFile.height} (${bestFile.quality || 'standard'})`);
+    console.log(`🎲 [Pexels] Selected random video from ${topCandidates.length} high-quality candidates: ${bestFile.width}x${bestFile.height} (${bestFile.quality || 'standard'}) - Duration: ${selected.duration || 'unknown'}s`);
     console.log(`🌐 [Pexels Webpage]: ${selected.videoUrl}`);
     console.log(`🔗 [Pexels Direct Video MP4]: ${bestFile.link}`);
 
@@ -226,7 +227,26 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
     const hash = crypto.createHash('md5').update(bestFile.link).digest('hex');
     const cacheFilename = `${hash}.mp4`;
     const cacheFilePath = path.join(cacheDir, cacheFilename);
+    const jsonFilePath = path.join(cacheDir, `${hash}.json`);
     const relativeCachePath = `videos/cache/${cacheFilename}`;
+
+    // Write metadata JSON (duration, url, id)
+    if (!fs.existsSync(jsonFilePath) && selected.duration) {
+      try {
+        fs.writeFileSync(
+          jsonFilePath,
+          JSON.stringify(
+            {
+              id: selected.videoId,
+              url: selected.videoUrl,
+              duration: selected.duration,
+            },
+            null,
+            2
+          )
+        );
+      } catch {}
+    }
 
     if (fs.existsSync(cacheFilePath)) {
       const stats = fs.statSync(cacheFilePath);
@@ -253,4 +273,23 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
     console.log(`🌿 [Pexels] Falling back to local curated nature video.`);
     return getFallbackNatureVideo(trimmedQuery);
   }
+}
+
+/**
+ * Reads cached video duration in seconds if available from public/videos/cache/<hash>.json
+ */
+export function getCachedVideoDuration(videoPath?: string): number | undefined {
+  if (!videoPath) return undefined;
+  try {
+    const filename = path.basename(videoPath);
+    const jsonFilename = filename.replace(/\.mp4$/i, '.json');
+    const jsonPath = path.resolve(process.cwd(), 'public', 'videos', 'cache', jsonFilename);
+    if (fs.existsSync(jsonPath)) {
+      const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+      if (typeof data.duration === 'number' && data.duration > 0) {
+        return data.duration;
+      }
+    }
+  } catch {}
+  return undefined;
 }

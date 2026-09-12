@@ -1,5 +1,12 @@
 import React, { useMemo } from 'react';
-import { Loop, OffthreadVideo, staticFile } from 'remotion';
+import {
+  Sequence,
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+  OffthreadVideo,
+  staticFile,
+} from 'remotion';
 import { CompositionProps } from './types';
 import { calculateVideoTiming } from './utils/timing';
 import { resolveUrduFont } from './utils/fontSelector';
@@ -148,6 +155,104 @@ export const CinematicPexelsShort: React.FC<CompositionProps> = (props) => {
     timing.urduEndFrame,
   ]);
 
+interface SeamlessVideoLoopProps {
+  src: string;
+  videoDurationSeconds?: number;
+  crossfadeSeconds?: number;
+}
+
+const CrossfadedVideoClip: React.FC<{
+  src: string;
+  isFirst: boolean;
+  crossfadeFrames: number;
+}> = ({ src, isFirst, crossfadeFrames }) => {
+  const frame = useCurrentFrame();
+
+  const opacity = isFirst
+    ? 1
+    : interpolate(frame, [0, crossfadeFrames], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+
+  return (
+    <OffthreadVideo
+      src={src}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 1080,
+        height: 1920,
+        objectFit: 'cover',
+        opacity,
+      }}
+      volume={0}
+      muted
+      {...({ loop: true } as any)}
+    />
+  );
+};
+
+const SeamlessVideoLoop: React.FC<SeamlessVideoLoopProps> = ({
+  src,
+  videoDurationSeconds,
+  crossfadeSeconds = 1.4,
+}) => {
+  const { durationInFrames, fps } = useVideoConfig();
+
+  // If known duration from Pexels/cache, use it (clamped safely between 6s and 30s); otherwise default to 15s
+  const safeDurationSec = videoDurationSeconds
+    ? Math.max(6, Math.min(30, videoDurationSeconds))
+    : 15;
+
+  const loopFrames = Math.round(safeDurationSec * fps);
+  const crossfadeFrames = Math.max(15, Math.round(crossfadeSeconds * fps));
+  const stepFrames = Math.max(30, loopFrames - crossfadeFrames);
+
+  const numClips = Math.ceil(durationInFrames / stepFrames) + 1;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 1080,
+        height: 1920,
+        overflow: 'hidden',
+        zIndex: 1,
+      }}
+    >
+      {Array.from({ length: numClips }).map((_, i) => {
+        const from = i * stepFrames;
+        if (from >= durationInFrames) return null;
+
+        return (
+          <Sequence
+            key={i}
+            from={from}
+            durationInFrames={loopFrames}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 1080,
+              height: 1920,
+            }}
+          >
+            <CrossfadedVideoClip
+              src={src}
+              isFirst={i === 0}
+              crossfadeFrames={crossfadeFrames}
+            />
+          </Sequence>
+        );
+      })}
+    </div>
+  );
+};
+
   return (
     <div
       style={{
@@ -158,24 +263,12 @@ export const CinematicPexelsShort: React.FC<CompositionProps> = (props) => {
         backgroundColor: '#050a0f',
       }}
     >
-      {/* 1. Dynamic Vertical Video Background with OffthreadVideo */}
-      <Loop durationInFrames={300}>
-        <OffthreadVideo
-          src={resolvedVideoSrc}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: 1080,
-            height: 1920,
-            objectFit: 'cover',
-            zIndex: 1,
-          }}
-          volume={0}
-          muted
-          {...({ loop: true } as any)}
-        />
-      </Loop>
+      {/* 1. Dynamic Vertical Video Background with Seamless Crossfade Loop */}
+      <SeamlessVideoLoop
+        src={resolvedVideoSrc}
+        videoDurationSeconds={props.backgroundVideoDuration}
+        crossfadeSeconds={1.4}
+      />
 
       {/* 2. Dark Cinematic Vignette & Atmospheric Overlay (50% - 65% Opacity) */}
       <div

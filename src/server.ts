@@ -12,7 +12,7 @@ import { renderMedia, renderStill, selectComposition } from '@remotion/renderer'
 import { defaultProps, resolveConcretePayload, UrduInsightPayload, urduInsightSchema } from './types';
 import { calculateVideoTiming } from './utils/timing';
 import { generateUrduTts } from './utils/tts';
-import { resolvePexelsVideo } from './utils/pexelsSelector';
+import { resolvePexelsVideo, getCachedVideoDuration } from './utils/pexelsSelector';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -215,12 +215,15 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       console.log(`ℹ️ [Template Override]: "${requestedTemplate}" selected. Ignoring pexelsQuery.`);
     }
 
+    const resolvedDuration = body.backgroundVideoDuration || getCachedVideoDuration(resolvedBgVideo);
+
     // Merge defaults with request body
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
       template: (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
       backgroundVideoUrl: resolvedBgVideo || (!isNonPexelsTemplate ? body.backgroundVideoUrl : undefined),
+      backgroundVideoDuration: resolvedDuration,
       pexelsQuery: !isNonPexelsTemplate ? pexelsQuery : undefined,
       fontFamily: body.fontFamily || body.font || defaultProps.fontFamily,
       urduText: body.body || body.bodyText || body.urduText || '',
@@ -230,6 +233,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const payload = resolveConcretePayload(rawPayload);
     if (resolvedBgVideo) {
       payload.backgroundVideoUrl = resolvedBgVideo;
+      payload.backgroundVideoDuration = resolvedDuration;
     }
     if (!isNonPexelsTemplate && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
       payload.template = 'CinematicPexelsShort';

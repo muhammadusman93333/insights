@@ -10,7 +10,7 @@ import { renderMedia, renderStill, selectComposition } from '@remotion/renderer'
 import { defaultProps, resolveConcretePayload, UrduInsightPayload } from './types';
 import { calculateVideoTiming } from './utils/timing';
 import { generateUrduTts } from './utils/tts';
-import { resolvePexelsVideo } from './utils/pexelsSelector';
+import { resolvePexelsVideo, getCachedVideoDuration } from './utils/pexelsSelector';
 
 export interface RenderOptions {
   inputPayload?: UrduInsightPayload;
@@ -54,6 +54,7 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
       payload.pexelsQuery.trim(),
       payload.pexelsApiKey || (payload as any).apiKey
     );
+    payload.backgroundVideoDuration = getCachedVideoDuration(payload.backgroundVideoUrl);
     payload.template = 'CinematicPexelsShort';
   } else if (isNonPexelsTemplate && payload.pexelsQuery) {
     console.log(`ℹ️ [Template Override]: "${payload.template}" selected. Ignoring pexelsQuery.`);
