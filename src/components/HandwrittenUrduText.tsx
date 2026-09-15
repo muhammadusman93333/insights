@@ -466,7 +466,43 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
           height: 1920,
         }}
       >
-        {/* Render Hook Lines */}
+        {/* Subtle Ghost Base Layer for Instant Mobile Readability (Preserves exact calligraphy styling) */}
+        {renderedHookLines.map((item, idx) => (
+          <div
+            key={`hook_ghost_${idx}`}
+            style={{
+              position: 'absolute',
+              top: item.lineY,
+              left: 0,
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              pointerEvents: 'none',
+              opacity: 0.26,
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-block',
+                textAlign: textAlignment,
+                direction: 'rtl',
+                fontFamily: `'${fontFamily}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
+                fontSize: Math.round(fontSize * 1.04),
+                fontWeight: 700,
+                lineHeight: 2.0,
+                color: hookTextColor,
+                textShadow: hookShadow,
+                whiteSpace: 'nowrap',
+                overflow: 'visible',
+              }}
+            >
+              {item.text}
+            </div>
+          </div>
+        ))}
+
+        {/* Render Active Hook Writing Lines */}
         {renderedHookLines.map((item, idx) => {
           const leftClip = Math.max(0, (1 - item.progress) * 100);
           if (item.progress <= 0) return null;

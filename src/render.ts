@@ -108,8 +108,12 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   // Synthesize human-like Urdu voiceover for Hook & Body (Title excluded)
   const enableVoiceover = payload.enableVoiceover !== false;
   const voice = payload.voiceoverVoice || 'ur-PK-AsadNeural';
-  const rate = payload.voiceoverRate || '-5%';
-  const pitch = payload.voiceoverPitch || '-1Hz';
+  const defaultRate = payload.voiceoverRate || '-5%';
+  const defaultPitch = payload.voiceoverPitch || '-1Hz';
+  const hookRate = (payload as any).hookVoiceoverRate || '+3%';
+  const hookPitch = (payload as any).hookVoiceoverPitch || '-1Hz';
+  const bodyRate = (payload as any).bodyVoiceoverRate || '-2%';
+  const bodyPitch = (payload as any).bodyVoiceoverPitch || '-3Hz';
 
   const rawHook = typeof payload.hook === 'string' ? payload.hook.trim() : '';
   const rawBody = typeof (payload.body || payload.bodyText || payload.urduText) === 'string'
@@ -123,8 +127,8 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
         const hookRes = await generateUrduTts({
           text: rawHook,
           voice,
-          rate,
-          pitch,
+          rate: hookRate,
+          pitch: hookPitch,
           outputDir: publicTtsDir,
         });
         payload.hookAudioSrc = `audio/tts/${hookRes.filename}`;
@@ -144,8 +148,8 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
         const bodyRes = await generateUrduTts({
           text: rawBody,
           voice,
-          rate,
-          pitch,
+          rate: bodyRate,
+          pitch: bodyPitch,
           outputDir: publicTtsDir,
         });
         payload.bodyAudioSrc = `audio/tts/${bodyRes.filename}`;
@@ -161,8 +165,8 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
 
     if (payload.hookAudioSrc || payload.bodyAudioSrc) {
       payload.voiceoverVolume = payload.voiceoverVolume ?? 1.0;
-      payload.bgMusicVolume = payload.bgMusicVolume ?? 0.16;
-      payload.penVolume = payload.penVolume ?? 0.28;
+      payload.bgMusicVolume = payload.bgMusicVolume ?? 0.14;
+      payload.penVolume = payload.penVolume ?? 0.14;
     }
   }
 

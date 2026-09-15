@@ -135,6 +135,7 @@ export async function resolvePexelsVideo(query: string, apiKey?: string): Promis
       score: number;
       videoUrl: string;
       videoId: number;
+      duration?: number;
     }
 
     const candidates: ScoredCandidate[] = [];

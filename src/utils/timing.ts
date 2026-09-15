@@ -87,7 +87,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
     body = '',
     bodyText = '',
     urduText = '',
-    readingPauseSeconds = 4.5,
+    readingPauseSeconds = 0.5,
     fontFamily,
   } = payload;
 
@@ -199,7 +199,7 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
 
   // Final reading pause (default 4.5s = 135 frames)
   const pauseFrames = Math.round(readingPauseSeconds * FPS);
-  const totalFrames = Math.max(450, overallEnd + pauseFrames); // Min 15s (450 frames)
+  const totalFrames = Math.max(300, overallEnd + pauseFrames); // Min 10s (300 frames)
 
   const combinedLines = [...hookLines, ...bodyLines];
 

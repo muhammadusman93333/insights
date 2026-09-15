@@ -252,8 +252,12 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     // -------------------------------------------------------------
     const enableVoiceover = payload.enableVoiceover !== false;
     const voice = payload.voiceoverVoice || 'ur-PK-AsadNeural';
-    const rate = payload.voiceoverRate || '-5%';
-    const pitch = payload.voiceoverPitch || '-1Hz';
+    const defaultRate = payload.voiceoverRate || '-5%';
+    const defaultPitch = payload.voiceoverPitch || '-1Hz';
+    const hookRate = (payload as any).hookVoiceoverRate || '+3%';
+    const hookPitch = (payload as any).hookVoiceoverPitch || '-1Hz';
+    const bodyRate = (payload as any).bodyVoiceoverRate || '-2%';
+    const bodyPitch = (payload as any).bodyVoiceoverPitch || '-3Hz';
 
     const rawHook = typeof payload.hook === 'string' ? payload.hook.trim() : '';
     const rawBody = typeof (payload.body || payload.bodyText || payload.urduText) === 'string'
@@ -274,8 +278,8 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
           const hookRes = await generateUrduTts({
             text: rawHook,
             voice,
-            rate,
-            pitch,
+            rate: hookRate,
+            pitch: hookPitch,
             outputDir: publicTtsDir,
           });
           payload.hookAudioSrc = `${serverBaseUrl}/audio/${hookRes.filename}`;
@@ -297,8 +301,8 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
           const bodyRes = await generateUrduTts({
             text: rawBody,
             voice,
-            rate,
-            pitch,
+            rate: bodyRate,
+            pitch: bodyPitch,
             outputDir: publicTtsDir,
           });
           payload.bodyAudioSrc = `${serverBaseUrl}/audio/${bodyRes.filename}`;
