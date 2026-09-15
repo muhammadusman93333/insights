@@ -129,7 +129,11 @@ function getInputs(): {
   }
 
   const uploadUrl = rawInputs.upload_url || process.env.UPLOAD_URL || DEFAULT_UPLOAD_URL;
-  const webhookUrl = rawInputs.webhook_url || process.env.MAKE_WEBHOOK_URL || '';
+  const rawWebhook = (rawInputs.webhook_url ?? '').trim();
+  const isWebhookDisabled = rawWebhook === 'none' || rawWebhook === 'disabled' || rawWebhook === 'false' || rawWebhook === 'off';
+  const webhookUrl = isWebhookDisabled
+    ? ''
+    : (rawWebhook || (rawInputs.webhook_url === undefined ? (process.env.MAKE_WEBHOOK_URL || '') : ''));
   const uploadApiToken = rawInputs.upload_api_token || process.env.UPLOAD_API_TOKEN || '';
 
   // Build the final UrduInsightPayload
@@ -287,8 +291,8 @@ async function uploadThumbnail(filePath: string, uploadUrl: string, uploadApiTok
  * Sends a completion or failure webhook to Make.com
  */
 async function sendWebhook(webhookUrl: string, data: Record<string, any>) {
-  if (!webhookUrl) {
-    console.log('ℹ️ No webhook URL configured, skipping webhook notification.');
+  if (!webhookUrl || webhookUrl === 'none' || webhookUrl === 'disabled' || webhookUrl === 'false') {
+    console.log('ℹ️ Webhook is disabled or not configured, skipping notification.');
     return;
   }
 
