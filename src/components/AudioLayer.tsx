@@ -22,6 +22,7 @@ interface AudioLayerProps {
   voiceoverAudio?: string;
   voiceoverStartFrame?: number;
   voiceoverVolume?: number;
+  disableFadeOut?: boolean;
 }
 
 /**
@@ -57,6 +58,7 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
   voiceoverAudio,
   voiceoverStartFrame = 0,
   voiceoverVolume = 1.0,
+  disableFadeOut = false,
 }) => {
   const { durationInFrames } = useVideoConfig();
 
@@ -102,6 +104,8 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
     return starts;
   }, [penScratchSound, resolvedPenSoundSrc, writingIntervals]);
 
+  const shouldFadeOut = !disableFadeOut && durationInFrames > 180;
+
   return (
     <>
       {/* 1. Peaceful Background Music (lowered/ducked underneath voiceover) */}
@@ -109,12 +113,13 @@ export const AudioLayer: React.FC<AudioLayerProps> = ({
         <Audio
           src={resolvedBgMusicSrc}
           volume={(f) => {
-            // Smooth fast fade in over first 15 frames (0.5s)
-            if (f < 15) {
-              return (f / 15) * effectiveMusicVolume;
+            // Smooth fast fade in over first 15 frames (0.5s) if longer video, or first 5 frames if loop
+            const fadeInFrames = shouldFadeOut ? 15 : 5;
+            if (f < fadeInFrames) {
+              return (f / fadeInFrames) * effectiveMusicVolume;
             }
-            // Smooth fade out over last 60 frames (2s)
-            if (f > durationInFrames - 60) {
+            // Smooth fade out over last 60 frames (2s) only for standard long videos
+            if (shouldFadeOut && f > durationInFrames - 60) {
               return Math.max(0, ((durationInFrames - f) / 60) * effectiveMusicVolume);
             }
             return effectiveMusicVolume;

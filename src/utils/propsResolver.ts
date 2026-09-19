@@ -105,6 +105,40 @@ export function resolveConcretePayload(payload: UrduInsightPayload): UrduInsight
     resolved.headerBadgeBorderColor = resolved.headerBadgeBorderColor || resolved.accentColor;
   }
 
+  // 7. Provide instant display, loud nasheed & no-voiceover defaults for CinematicLoopShort
+  if (
+    resolved.template === 'CinematicLoopShort' ||
+    resolved.template === 'CinematicPexelsLoopShort' ||
+    resolved.template === 'loop' ||
+    resolved.template === 'cinematic-loop'
+  ) {
+    resolved.template = 'CinematicLoopShort';
+    resolved.enableVoiceover = false;
+    resolved.showPenAnimation = false;
+    resolved.penScratchSound = false;
+    if (resolved.bgMusicVolume === undefined) {
+      resolved.bgMusicVolume = 0.8;
+    }
+    if (!resolved.primaryColor || resolved.primaryColor === '#2d4a22') {
+      resolved.primaryColor = '#0f172a';
+    }
+    if (!resolved.accentColor || resolved.accentColor === '#dfb76c' || resolved.accentColor === '#1fdceaff') {
+      resolved.accentColor = '#dfb76c';
+    }
+    if (resolved.overlayOpacity === undefined || resolved.overlayOpacity === 0.42) {
+      resolved.overlayOpacity = 0.60;
+    }
+    resolved.urduTextColor = resolved.urduTextColor || '#ffffff';
+    resolved.hookTextColor = resolved.hookTextColor || '#dfb76c';
+    resolved.titleTextColor = resolved.titleTextColor || '#ffffff';
+    resolved.titleTextShadow = resolved.titleTextShadow || '0 2px 10px rgba(0,0,0,0.85)';
+    resolved.inkShadow = resolved.inkShadow || '0 3px 20px rgba(0,0,0,0.95), 0 0 45px rgba(0,0,0,0.85)';
+    resolved.hookShadow = resolved.hookShadow || '0 3px 20px rgba(0,0,0,0.95), 0 0 45px rgba(0,0,0,0.85)';
+    resolved.dividerColor = resolved.dividerColor || resolved.accentColor;
+    resolved.headerBadgeBgColor = resolved.headerBadgeBgColor || 'rgba(10, 15, 20, 0.75)';
+    resolved.headerBadgeBorderColor = resolved.headerBadgeBorderColor || resolved.accentColor;
+  }
+
   return resolved;
 }
 

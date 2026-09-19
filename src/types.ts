@@ -56,6 +56,10 @@ export const templateSchema = z.enum([
   'QuranHandwrittenShort',
   'QuranNatureShort',
   'CinematicPexelsShort',
+  'CinematicLoopShort',
+  'CinematicPexelsLoopShort',
+  'loop',
+  'cinematic-loop',
 ]);
 
 export type TemplateType = z.infer<typeof templateSchema>;
@@ -146,6 +150,7 @@ export const urduInsightSchema = z.object({
   pexelsApiKey: z.string().optional(),
   backgroundVideoUrl: z.string().optional(),
   backgroundVideoDuration: z.number().optional(),
+  loopDurationSeconds: z.number().min(4).max(7).optional().default(5.5),
 });
 
 export type UrduInsightPayload = z.infer<typeof urduInsightSchema>;
@@ -186,6 +191,7 @@ export const defaultProps: UrduInsightPayload = {
   voiceoverVoice: 'ur-PK-AsadNeural',
   voiceoverRate: '-5%',
   voiceoverPitch: '-1Hz',
+  loopDurationSeconds: 5.5,
 };
 
 export { resolveConcretePayload } from './utils/propsResolver';

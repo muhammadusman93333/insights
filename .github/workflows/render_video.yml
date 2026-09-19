@@ -79,10 +79,11 @@ on:
         required: false
         type: choice
         options:
+          - 'CinematicLoopShort'
           - 'CinematicPexelsShort'
           - 'QuranNatureShort'
           - 'QuranHandwrittenShort'
-        default: 'CinematicPexelsShort'
+        default: 'CinematicLoopShort'
       pexelsQuery:
         description: 'Pexels Video Search Query (e.g. dark stormy clouds)'
         required: false

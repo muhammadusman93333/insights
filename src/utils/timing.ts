@@ -101,6 +101,38 @@ export function calculateVideoTiming(payload: UrduInsightPayload): TimingPlan {
   const hookLines = rawHook ? splitUrduIntoLines(rawHook, hookFont) : [];
   const bodyLines = rawBody ? splitUrduIntoLines(rawBody, undefined) : [];
 
+  const isLoopTemplate =
+    payload.template === 'CinematicLoopShort' ||
+    payload.template === 'CinematicPexelsLoopShort' ||
+    payload.template === 'loop' ||
+    payload.template === 'cinematic-loop';
+
+  if (isLoopTemplate) {
+    const rawSec = payload.loopDurationSeconds || 5.5;
+    const clampedSec = Math.min(6.0, Math.max(5.0, rawSec));
+    const loopFrames = Math.round(clampedSec * FPS);
+    const combinedLines = [...hookLines, ...bodyLines];
+
+    return {
+      totalFrames: loopFrames,
+      headerStartFrame: 0,
+      headerEndFrame: 0,
+      shiftStartFrame: 0,
+      shiftEndFrame: 0,
+      shouldShift: false,
+      hookStartFrame: 0,
+      hookEndFrame: loopFrames,
+      hookLines,
+      bodyStartFrame: 0,
+      bodyEndFrame: loopFrames,
+      bodyLines,
+      urduStartFrame: 0,
+      urduEndFrame: loopFrames,
+      urduLines: combinedLines,
+      footerStartFrame: 0,
+    };
+  }
+
   const headerStartFrame = 0;
   const headerEndFrame = 15;
 
