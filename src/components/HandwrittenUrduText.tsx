@@ -123,7 +123,7 @@ export const HandwrittenUrduText: React.FC<HandwrittenUrduTextProps> = ({
     fontSize = 47;
     lineSpacing = 138;
   } else if (totalLines >= 1) {
-    fontSize = 47;
+    fontSize = 40;
     lineSpacing = 138;
   } else {
     fontSize = 62;
