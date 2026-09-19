@@ -196,6 +196,12 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     // If template is QuranHandwrittenShort or QuranNatureShort, pexelsQuery is omitted.
     // -------------------------------------------------------------
     const requestedTemplate = body.template;
+    const isLoopRequested =
+      requestedTemplate === 'CinematicLoopShort' ||
+      requestedTemplate === 'CinematicPexelsLoopShort' ||
+      requestedTemplate === 'loop' ||
+      requestedTemplate === 'cinematic-loop';
+
     const isNonPexelsTemplate =
       requestedTemplate === 'QuranHandwrittenShort' ||
       requestedTemplate === 'parchment' ||
@@ -209,7 +215,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     if (pexelsQuery && typeof pexelsQuery === 'string' && pexelsQuery.trim().length > 0) {
       console.log(`\n🌊 [Pexels Query Received]: "${pexelsQuery.trim()}"`);
       resolvedBgVideo = await resolvePexelsVideo(pexelsQuery.trim(), body.pexelsApiKey || body.apiKey);
-      body.template = 'CinematicPexelsShort';
+      if (!isLoopRequested && (!body.template || body.template === 'pexels')) {
+        body.template = 'CinematicPexelsShort';
+      }
       body.backgroundVideoUrl = resolvedBgVideo;
     } else if (isNonPexelsTemplate && body.pexelsQuery) {
       console.log(`ℹ️ [Template Override]: "${requestedTemplate}" selected. Ignoring pexelsQuery.`);
@@ -221,7 +229,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
-      template: (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
+      template: isLoopRequested
+        ? 'CinematicLoopShort'
+        : (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
       backgroundVideoUrl: resolvedBgVideo || (!isNonPexelsTemplate ? body.backgroundVideoUrl : undefined),
       backgroundVideoDuration: resolvedDuration,
       pexelsQuery: !isNonPexelsTemplate ? pexelsQuery : undefined,
@@ -235,15 +245,10 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       payload.backgroundVideoUrl = resolvedBgVideo;
       payload.backgroundVideoDuration = resolvedDuration;
     }
-    const isLoopRequested =
-      body.template === 'CinematicLoopShort' ||
-      body.template === 'CinematicPexelsLoopShort' ||
-      body.template === 'loop' ||
-      body.template === 'cinematic-loop';
-    if (!isNonPexelsTemplate && !isLoopRequested && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
-      payload.template = 'CinematicPexelsShort';
-    } else if (isLoopRequested) {
+    if (isLoopRequested) {
       payload.template = 'CinematicLoopShort';
+    } else if (!isNonPexelsTemplate && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
+      payload.template = 'CinematicPexelsShort';
     }
 
     console.log(`\n📥 API Render Request Received:`);
