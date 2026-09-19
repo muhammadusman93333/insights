@@ -209,7 +209,7 @@ export const QuranNatureShort: React.FC<CompositionProps> = (props) => {
           shiftStartFrame={timing.shiftStartFrame}
           shiftEndFrame={timing.shiftEndFrame}
           shouldShift={timing.shouldShift}
-          centerOffsetY={0}
+          centerOffsetY={timing.hookLines.length > 0 ? 520 : 0}
           titleTextColor={titleTextColor}
           titleTextShadow={titleTextShadow}
           badgeBgColor={headerBadgeBgColor}

@@ -63,6 +63,10 @@ export const BismillahHeader: React.FC<HeaderTitleProps> = ({
   return (
     <div
       style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

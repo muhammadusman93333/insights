@@ -13,6 +13,7 @@ import { resolveUrduFont } from './utils/fontSelector';
 import { resolveQalamConfig } from './utils/qalamSelector';
 import { resolveAudioTrack } from './utils/audioSelector';
 import { HandwrittenUrduText } from './components/HandwrittenUrduText';
+import { NatureHeader } from './components/NatureHeader';
 import { AudioLayer } from './components/AudioLayer';
 import { NatureFooter } from './components/NatureFooter';
 import { PaperConfig } from './utils/paperSelector';
@@ -77,6 +78,8 @@ export const CinematicPexelsShort: React.FC<CompositionProps> = (props) => {
     footerBadgeBgColor = 'rgba(10, 15, 20, 0.7)',
     footerBadgeBorderColor = '#dfb76c',
   } = props;
+
+  const frame = useCurrentFrame();
 
   // 1. Resolve dynamic calligraphy font
   const selectedFont = useMemo(() => {
@@ -292,52 +295,21 @@ const SeamlessVideoLoop: React.FC<SeamlessVideoLoopProps> = ({
         }}
       />
 
-      {/* 3. Header Title Badge: Centered at top */}
-      {title && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 75,
-            left: 0,
-            right: 0,
-            display: 'flex',
-            justifyContent: 'center',
-            zIndex: 20,
-            direction: 'rtl',
-          }}
-        >
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '10px 28px',
-              borderRadius: 32,
-              backgroundColor: headerBadgeBgColor,
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              border: `1.5px solid ${headerBadgeBorderColor}`,
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(223, 183, 108, 0.12)',
-            }}
-          >
-            <span style={{ color: headerBadgeBorderColor, fontSize: 20 }}>✦</span>
-            <span
-              style={{
-                fontSize: 42,
-                fontWeight: 700,
-                color: titleTextColor,
-                fontFamily: `'${selectedFont}', 'Jameel Noori Nastaleeq', 'Jameel Noori Nastaleeq Kasheeda', serif`,
-                textShadow: titleTextShadow,
-                letterSpacing: 0.5,
-                lineHeight: 1.2,
-              }}
-            >
-              {title}
-            </span>
-            <span style={{ color: headerBadgeBorderColor, fontSize: 20 }}>✦</span>
-          </div>
-        </div>
-      )}
+      {/* 3. Header: Reflection Title Badge */}
+      <NatureHeader
+        title={title}
+        primaryColor={primaryColor}
+        accentColor={accentColor}
+        fontFamily={selectedFont}
+        shiftStartFrame={timing.shiftStartFrame}
+        shiftEndFrame={timing.shiftEndFrame}
+        shouldShift={timing.shouldShift}
+        centerOffsetY={timing.hookLines.length > 0 ? 520 : 0}
+        titleTextColor={titleTextColor}
+        titleTextShadow={titleTextShadow}
+        badgeBgColor={headerBadgeBgColor}
+        badgeBorderColor={headerBadgeBorderColor}
+      />
 
       {/* 4. Synchronized Urdu Calligraphy Text (Hook from Frame 0 -> Glides to Top -> Body) */}
       <div
@@ -360,7 +332,7 @@ const SeamlessVideoLoop: React.FC<SeamlessVideoLoopProps> = ({
           shiftStartFrame={timing.shiftStartFrame}
           shiftEndFrame={timing.shiftEndFrame}
           shouldShift={timing.shouldShift}
-          centerOffsetY={500}
+          centerOffsetY={520}
           urduLines={timing.urduLines}
           urduStartFrame={timing.urduStartFrame}
           urduEndFrame={timing.urduEndFrame}
