@@ -3,6 +3,7 @@ import { Composition } from 'remotion';
 import { QuranHandwrittenShort } from './QuranHandwrittenShort';
 import { QuranNatureShort } from './QuranNatureShort';
 import { CinematicPexelsShort } from './CinematicPexelsShort';
+import { CinematicLoopShort } from './CinematicLoopShort';
 import { defaultProps, urduInsightSchema } from './types';
 import { calculateVideoDurationFrames, FPS } from './utils/timing';
 
@@ -59,6 +60,32 @@ export const Root: React.FC = () => {
         calculateMetadata={({ props }) => {
           return {
             durationInFrames: calculateVideoDurationFrames(props),
+          };
+        }}
+      />
+
+      {/* 4. Cinematic 5-6s Seamless Infinite Loop Video Template */}
+      <Composition
+        id="CinematicLoopShort"
+        component={CinematicLoopShort}
+        durationInFrames={calculateVideoDurationFrames({
+          ...defaultProps,
+          template: 'CinematicLoopShort',
+        })}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        schema={urduInsightSchema}
+        defaultProps={{
+          ...defaultProps,
+          template: 'CinematicLoopShort',
+        }}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: calculateVideoDurationFrames({
+              ...props,
+              template: 'CinematicLoopShort',
+            }),
           };
         }}
       />

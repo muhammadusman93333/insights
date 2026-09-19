@@ -196,6 +196,12 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     // If template is QuranHandwrittenShort or QuranNatureShort, pexelsQuery is omitted.
     // -------------------------------------------------------------
     const requestedTemplate = body.template;
+    const isLoopRequested =
+      requestedTemplate === 'CinematicLoopShort' ||
+      requestedTemplate === 'CinematicPexelsLoopShort' ||
+      requestedTemplate === 'loop' ||
+      requestedTemplate === 'cinematic-loop';
+
     const isNonPexelsTemplate =
       requestedTemplate === 'QuranHandwrittenShort' ||
       requestedTemplate === 'parchment' ||
@@ -209,7 +215,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     if (pexelsQuery && typeof pexelsQuery === 'string' && pexelsQuery.trim().length > 0) {
       console.log(`\n🌊 [Pexels Query Received]: "${pexelsQuery.trim()}"`);
       resolvedBgVideo = await resolvePexelsVideo(pexelsQuery.trim(), body.pexelsApiKey || body.apiKey);
-      body.template = 'CinematicPexelsShort';
+      if (!isLoopRequested && (!body.template || body.template === 'pexels')) {
+        body.template = 'CinematicPexelsShort';
+      }
       body.backgroundVideoUrl = resolvedBgVideo;
     } else if (isNonPexelsTemplate && body.pexelsQuery) {
       console.log(`ℹ️ [Template Override]: "${requestedTemplate}" selected. Ignoring pexelsQuery.`);
@@ -221,7 +229,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     const rawPayload: UrduInsightPayload = {
       ...defaultProps,
       ...body,
-      template: (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
+      template: isLoopRequested
+        ? 'CinematicLoopShort'
+        : (body.template || (pexelsQuery ? 'CinematicPexelsShort' : defaultProps.template)) as any,
       backgroundVideoUrl: resolvedBgVideo || (!isNonPexelsTemplate ? body.backgroundVideoUrl : undefined),
       backgroundVideoDuration: resolvedDuration,
       pexelsQuery: !isNonPexelsTemplate ? pexelsQuery : undefined,
@@ -235,7 +245,9 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       payload.backgroundVideoUrl = resolvedBgVideo;
       payload.backgroundVideoDuration = resolvedDuration;
     }
-    if (!isNonPexelsTemplate && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
+    if (isLoopRequested) {
+      payload.template = 'CinematicLoopShort';
+    } else if (!isNonPexelsTemplate && (body.template === 'CinematicPexelsShort' || pexelsQuery)) {
       payload.template = 'CinematicPexelsShort';
     }
 
@@ -250,7 +262,12 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     // -------------------------------------------------------------
     // Synthesize human-like Urdu voiceover for Hook & Body (Title excluded)
     // -------------------------------------------------------------
-    const enableVoiceover = payload.enableVoiceover !== false;
+    const isLoopTemplate =
+      payload.template === 'CinematicLoopShort' ||
+      payload.template === 'CinematicPexelsLoopShort' ||
+      payload.template === 'loop' ||
+      payload.template === 'cinematic-loop';
+    const enableVoiceover = !isLoopTemplate && payload.enableVoiceover !== false;
     const voice = payload.voiceoverVoice || 'ur-PK-AsadNeural';
     const defaultRate = payload.voiceoverRate || '-5%';
     const defaultPitch = payload.voiceoverPitch || '-1Hz';
@@ -366,11 +383,13 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
     }
 
     const compositionId =
-      payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
-        ? 'CinematicPexelsShort'
-        : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
-            ? 'QuranHandwrittenShort'
-            : 'QuranNatureShort');
+      payload.template === 'CinematicLoopShort' || payload.template === 'CinematicPexelsLoopShort' || payload.template === 'loop' || payload.template === 'cinematic-loop'
+        ? 'CinematicLoopShort'
+        : (payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
+            ? 'CinematicPexelsShort'
+            : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
+                ? 'QuranHandwrittenShort'
+                : 'QuranNatureShort'));
 
     // Select composition and compute dynamic duration
     const composition = await selectComposition({
@@ -387,9 +406,11 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
 
     // Calculate screenshot frame & offset in milliseconds for Instagram Reels
     const timing = calculateVideoTiming(payload);
-    const screenshotFrame = timing.shiftStartFrame > 0
-      ? Math.max(1, timing.shiftStartFrame - 2)
-      : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
+    const screenshotFrame = compositionId === 'CinematicLoopShort'
+      ? 15
+      : (timing.shiftStartFrame > 0
+          ? Math.max(1, timing.shiftStartFrame - 2)
+          : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame));
     const thumbOffsetMs = Math.round((screenshotFrame / composition.fps) * 1000);
 
     const isLinux = process.platform === 'linux';

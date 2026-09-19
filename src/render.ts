@@ -55,7 +55,9 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
       payload.pexelsApiKey || (payload as any).apiKey
     );
     payload.backgroundVideoDuration = getCachedVideoDuration(payload.backgroundVideoUrl);
-    payload.template = 'CinematicPexelsShort';
+    if (!payload.template || payload.template === 'pexels') {
+      payload.template = 'CinematicPexelsShort';
+    }
   } else if (isNonPexelsTemplate && payload.pexelsQuery) {
     console.log(`ℹ️ [Template Override]: "${payload.template}" selected. Ignoring pexelsQuery.`);
     payload.pexelsQuery = undefined;
@@ -106,7 +108,12 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
   }
 
   // Synthesize human-like Urdu voiceover for Hook & Body (Title excluded)
-  const enableVoiceover = payload.enableVoiceover !== false;
+  const isLoopTemplate =
+    payload.template === 'CinematicLoopShort' ||
+    payload.template === 'CinematicPexelsLoopShort' ||
+    payload.template === 'loop' ||
+    payload.template === 'cinematic-loop';
+  const enableVoiceover = !isLoopTemplate && payload.enableVoiceover !== false;
   const voice = payload.voiceoverVoice || 'ur-PK-AsadNeural';
   const defaultRate = payload.voiceoverRate || '-5%';
   const defaultPitch = payload.voiceoverPitch || '-1Hz';
@@ -181,11 +188,13 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
 
   console.log('🔍 Selecting composition...');
   const compositionId =
-    payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
-      ? 'CinematicPexelsShort'
-      : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
-          ? 'QuranHandwrittenShort'
-          : 'QuranNatureShort');
+    payload.template === 'CinematicLoopShort' || payload.template === 'CinematicPexelsLoopShort' || payload.template === 'loop' || payload.template === 'cinematic-loop'
+      ? 'CinematicLoopShort'
+      : (payload.template === 'CinematicPexelsShort' || payload.template === 'pexels'
+          ? 'CinematicPexelsShort'
+          : (payload.template === 'parchment' || payload.template === 'handwritten' || payload.template === 'QuranHandwrittenShort'
+              ? 'QuranHandwrittenShort'
+              : 'QuranNatureShort'));
 
   const composition = await selectComposition({
     serveUrl: bundleLocation,
@@ -195,9 +204,11 @@ export async function renderUrduInsightVideo(options: RenderOptions = {}) {
 
   // Calculate timing to determine the exact screenshot frame
   const timing = calculateVideoTiming(payload);
-  const screenshotFrame = timing.shiftStartFrame > 0
-    ? Math.max(1, timing.shiftStartFrame - 2)
-    : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame);
+  const screenshotFrame = compositionId === 'CinematicLoopShort'
+    ? 15
+    : (timing.shiftStartFrame > 0
+        ? Math.max(1, timing.shiftStartFrame - 2)
+        : (timing.hookEndFrame > 0 ? timing.hookEndFrame : timing.headerEndFrame));
 
   const isLinux = process.platform === 'linux';
   const chromiumOptions = {
